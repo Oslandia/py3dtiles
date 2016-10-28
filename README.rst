@@ -1,5 +1,9 @@
 .. image:: https://secure.travis-ci.org/Oslandia/py3dtiles.png
 
+.. image:: https://badge.fury.io/py/py3dtiles.svg
+    :target: https://badge.fury.io/py/py3dtiles
+
+=========
 py3dtiles
 =========
 
@@ -15,7 +19,7 @@ From sources
 
 To use py3dtiles from sources:
 
-::
+.. code-block:: shell
 
     $ git clone https://github.com/Oslandia/py3dtiles
     $ cd py3dtiles
@@ -26,7 +30,7 @@ To use py3dtiles from sources:
 
 If you wan to run unit tests:
 
-::
+.. code-block:: shell
 
     (venv)$ pip install nose
     (venv)$ nosetests
@@ -41,13 +45,9 @@ Point Cloud
 Point Cloud Tile Format:
 https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/PointCloud
 
-.. raw:: html
-
-   <p align="center">
-
-.. raw:: html
-
-   </p>
+.. image:: https://raw.githubusercontent.com/Oslandia/py3dtiles/master/docs/pc_layout.png
+    :width: 700px
+    :align: center
 
 The py3dtiles module provides some classes to fit into the
 specification:
@@ -64,7 +64,7 @@ about a Point Cloud file **py3dtiles\_info**.
 
 **How to read a .pnts file**
 
-.. code:: python
+.. code-block:: python
 
     >>> from py3dtiles import TileReader
     >>>
@@ -110,7 +110,7 @@ about a Point Cloud file **py3dtiles\_info**.
 To write a Point Cloud file, you have to build a numpy array with the
 corresponding data type.
 
-.. code:: python
+.. code-block:: python
 
     >>> from py3dtiles import Feature
     >>> import numpy as np
@@ -143,7 +143,7 @@ corresponding data type.
 If we want to retrieve basic information about the file *mypoints.pnts*
 previously created:
 
-::
+.. code-block:: shell
 
     $ py3dtiles_info mypoints.pnts
     Tile Header
