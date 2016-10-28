@@ -1,0 +1,3 @@
+recursive-include py3dtiles/*
+recursive-include tools/*
+include README.md

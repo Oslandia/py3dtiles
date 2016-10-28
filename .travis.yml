@@ -1,0 +1,14 @@
+sudo: required
+dist: trusty
+
+language: python
+python:
+  - "3.5"
+
+install:
+  - pip install -e .
+  - python setup.py install
+
+script:
+  - nosetests
+  - py3dtiles_info tests/pointCloudRGB.pnts
