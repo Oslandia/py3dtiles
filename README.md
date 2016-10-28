@@ -130,13 +130,13 @@ corresponding data type.
 >>> t.save_as("mypoints.pnts")
 ````
 
-**How to use py3dtiles_info.py**
+**How to use py3dtiles_info**
 
 If we want to retrieve basic information about the file *mypoints.pnts*
 previously created:
 
 ````
-$ ./tools/py3dtiles_info.py mypoints.pnts
+$ py3dtiles_info mypoints.pnts
 Tile Header
 -----------
 Magic Value:  pnts
