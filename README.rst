@@ -50,12 +50,13 @@ https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/PointC
    </p>
 
 The py3dtiles module provides some classes to fit into the
-specification: - *Tile* with a header *TileHeader* and a body *TileBody*
+specification:
+
+- *Tile* with a header *TileHeader* and a body *TileBody*
 - *TileHeader* represents the first 28 bytes (magic value, version, ...)
-- *TileBody* contains the feature table *FeatureTable* and the batch
-table (not supported for now) - *FeatureTable* with a header
-*FeatureTableHeader* and a *FeatureTableBody* - *FeatureTableBody* which
-contains features of type *Feature*
+- *TileBody* contains the feature table *FeatureTable* and the batch table (not supported for now)
+- *FeatureTable* with a header *FeatureTableHeader* and a *FeatureTableBody*
+- *FeatureTableBody* which contains features of type *Feature*
 
 Moreover, a utility class *TileReader* is available to read a *.pnts*
 file as well as a simple command line tool to retrieve basic information
