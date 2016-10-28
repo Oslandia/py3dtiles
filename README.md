@@ -50,8 +50,8 @@ The py3dtiles module provides some classes to fit into the specification:
 - *FeatureTableBody* which contains features of type *Feature*
 
 Moreover, a utility class *TileReader* is available to read a *.pnts* file as
-well as simple command line tool to retrieve basic information about a Point Cloud
-file **py3dtiles_info.py**.
+well as a simple command line tool to retrieve basic information about a Point Cloud
+file **py3dtiles_info**.
 
 
 **How to read a .pnts file**
