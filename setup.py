@@ -50,7 +50,7 @@ setup(
     url='https://github.com/Oslandia/py3dtiles',
     author='dev',
     author_email='contact@oslandia.com',
-    license='GPLv3',
+    license='LGPL-2.1',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
