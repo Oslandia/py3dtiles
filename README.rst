@@ -11,6 +11,9 @@ Python module to manage 3DTiles format.
 
 For now, only the Point Cloud specification is supported.
 
+py3dtiles is distributed under LGPL2 or later.
+
+
 Install
 -------
 
