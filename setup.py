@@ -8,7 +8,9 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 requirements = (
     'numpy',
-    'pyproj'
+    'pyproj',
+    'cython',
+    'triangle'
 )
 
 dev_requirements = (
