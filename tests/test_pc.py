@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 # np.set_printoptions(formatter={'int':hex})
 
-from py3dtiles import TileReader, Tile, Feature
+from py3dtiles import TileReader, Tile, Feature, Pnts
 
 
 class TestTileReader(unittest.TestCase):
@@ -44,7 +44,7 @@ class TestTileBuilder(unittest.TestCase):
             features.append(newf)
 
         # create a tile
-        t = Tile.from_features(pdt, None, features)
+        t = Pnts.from_features(pdt, None, features)
 
         # configure the tile
         rtc = [1215012.8828876738, -4736313.051199594, 4081605.22126042]
@@ -52,7 +52,7 @@ class TestTileBuilder(unittest.TestCase):
 
         # get an array
         tile_arr = t.to_array()
-        t2 = Tile.from_array(tile_arr)
+        t2 = Pnts.from_array(tile_arr)
         self.assertEqual(t2.header.version, 1.0)
         self.assertEqual(t2.header.tile_byte_length, 12152)
         self.assertEqual(t2.header.ft_json_byte_length, 124)
@@ -86,7 +86,7 @@ class TestTileBuilder(unittest.TestCase):
             features.append(newf)
 
         # create a tile
-        t = Tile.from_features(pdt, cdt, features)
+        t = Pnts.from_features(pdt, cdt, features)
 
         # configure the tile
         rtc = [1215012.8828876738, -4736313.051199594, 4081605.22126042]
@@ -94,7 +94,7 @@ class TestTileBuilder(unittest.TestCase):
 
         # get an array
         tile_arr = t.to_array()
-        t2 = Tile.from_array(tile_arr)
+        t2 = Pnts.from_array(tile_arr)
         self.assertEqual(t2.header.version, 1.0)
         self.assertEqual(t2.header.tile_byte_length, 15176)
         self.assertEqual(t2.header.ft_json_byte_length, 148)

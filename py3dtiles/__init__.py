@@ -6,3 +6,4 @@ from .utils import TileReader, convert_to_ecef
 from .tile import Tile
 from .feature_table import Feature
 from .gltf import GlTF
+from .pnts import Pnts
