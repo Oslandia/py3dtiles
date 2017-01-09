@@ -13,7 +13,21 @@ class GlTF(object):
         self.body = None
 
     def to_array(self): # bgl
-        return 0
+        scene = json.dumps(self.header, separators=(',', ':'))
+
+        scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
+        # body must be 4-byte aligned
+        trailing = len(scene) % 4
+        if trailing != 0:
+            scene = scene + struct.pack(str(trailing) + 's', b' ' * trailing)
+
+        binaryHeader = struct.pack('4s', "glTF".encode('utf8')) + \
+                    struct.pack('I', 1) + \
+                    struct.pack('I', 20 + len(self.body) + len(scene)) + \
+                    struct.pack('I', len(scene)) + \
+                    struct.pack('I', 0)
+
+        return binaryHeader + scene + self.body
 
     @staticmethod
     def from_array(positions_dtype, positions):
@@ -22,7 +36,7 @@ class GlTF(object):
         return glTF
 
     @staticmethod
-    def from_wkb(wkbs, bboxes, transform):
+    def from_wkb(wkbs, bboxes, transform, binary = True, uri = None):
         """
         Parameters
         ----------
@@ -56,7 +70,7 @@ class GlTF(object):
                     else:
                         triangles.append(poly[0])
             nodes.append(triangles)
-            normals.append(computeNormals(triangles))
+            normals.append(compute_normals(triangles))
 
             bb.append(bbox)
 
@@ -67,7 +81,7 @@ class GlTF(object):
         nVertices = []
         nIndices = []
         for i in range(0,len(nodes)):
-            ptsIdx = indexation(nodes[i], normals[i])
+            ptsIdx = index(nodes[i], normals[i])
             packedVertices = b''.join(ptsIdx[0])
             binVertices.append(packedVertices)
             binIndices.append(struct.pack('H'*len(ptsIdx[2]), *ptsIdx[2]))
@@ -75,38 +89,18 @@ class GlTF(object):
             nVertices.append(len(ptsIdx[0]))
             nIndices.append(len(ptsIdx[2]))
 
-        glTF.header = outputJSON(binVertices, binIndices, binNormals, nVertices, nIndices, bb, False, "test.bin")
-        glTF.body = outputBin(binVertices, binIndices, binNormals)
-        glTF.temp = outputbglTF(binVertices, binIndices, binNormals, nVertices, nIndices, bb)
+        glTF.header = compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb, binary, uri)
+        glTF.body = compute_binary(binVertices, binIndices, binNormals)
 
         return glTF
 
-def outputbglTF(binVertices, binIndices, binNormals, nVertices, nIndices, bb):
-    scene = json.dumps(outputJSON(binVertices, binIndices, binNormals, nVertices, nIndices, bb, True), separators=(',', ':'))
-
-    scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
-    # body must be 4-byte aligned
-    trailing = len(scene) % 4
-    if trailing != 0:
-        scene = scene + struct.pack(str(trailing) + 's', b' ' * trailing)
-
-    body = outputBin(binVertices, binIndices, binNormals)
-
-    header = struct.pack('4s', "glTF".encode('utf8')) + \
-                struct.pack('I', 1) + \
-                struct.pack('I', 20 + len(body) + len(scene)) + \
-                struct.pack('I', len(scene)) + \
-                struct.pack('I', 0)
-
-    return header + scene + body
-
-def outputBin(binVertices, binIndices, binNormals):
+def compute_binary(binVertices, binIndices, binNormals):
     binary = b''.join(binVertices)
     binary = binary + b''.join(binNormals)
     binary = binary + b''.join(binIndices)
     return binary
 
-def outputJSON(binVertices, binIndices, binNormals, nVertices, nIndices, bb, bgltf, uri = ""):
+def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb, bgltf, uri):
     # Buffer
     meshNb = len(binVertices)
     sizeIdx = []
@@ -121,7 +115,7 @@ def outputJSON(binVertices, binIndices, binNormals, nVertices, nIndices, bb, bgl
             'type': "arraybuffer"
         }
     }
-    if uri != "":
+    if uri != None:
         buffers["binary_glTF"]["uri"] = uri
 
     # Buffer view
@@ -235,7 +229,7 @@ def outputJSON(binVertices, binIndices, binNormals, nVertices, nIndices, bb, bgl
     return header
 
 
-def indexation(triangles, normals):
+def index(triangles, normals):
     """
     Creates an index for points
     Replaces points in triangles by their index
@@ -301,7 +295,7 @@ def triangulate(polygon):
     return triangles
 
 
-def computeNormals(triangles):
+def compute_normals(triangles):
     normals = []
     for t in triangles:
         U = t[1] - t[0]
@@ -373,5 +367,5 @@ if __name__ == "__main__":
     f.close()
 
     f = open("test.glb", 'bw')
-    f.write(bytes(glTF.temp))
+    f.write(bytes(glTF.to_array()))
     f.close()
