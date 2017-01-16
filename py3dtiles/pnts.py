@@ -71,8 +71,8 @@ class PntsHeader(TileHeader):
     BYTELENGTH = 28
 
     def __init__(self):
-        self.type = TileType.UNKNWON
-        self.magic_value = ""
+        self.type = TileType.POINTCLOUD
+        self.magic_value = "pnts"
         self.version = 1
         self.tile_byte_length = 0
         self.ft_json_byte_length = 0

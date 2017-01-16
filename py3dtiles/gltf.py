@@ -15,28 +15,20 @@ class GlTF(object):
     def to_array(self): # bgl
         scene = json.dumps(self.header, separators=(',', ':'))
 
-        scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
+        #scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
         # body must be 4-byte aligned
-        trailing = len(scene) % 4
-        if trailing != 0:
-            scene = scene + struct.pack(str(trailing) + 's', b' ' * trailing)
+        scene += ' '*(4 - len(scene) % 4)
 
-        binaryHeader = struct.pack('4s', "glTF".encode('utf8')) + \
-                    struct.pack('I', 1) + \
-                    struct.pack('I', 20 + len(self.body) + len(scene)) + \
-                    struct.pack('I', len(scene)) + \
-                    struct.pack('I', 0)
+        binaryHeader = np.fromstring("glTF", dtype=np.uint8)
+        binaryHeader2 = np.array([1,
+                                  20 + len(self.body) + len(scene),
+                                  len(scene),
+                                  0], dtype=np.uint32)
 
-        return binaryHeader + scene + self.body
+        return np.concatenate((binaryHeader, binaryHeader2.view(np.uint8), np.fromstring(scene, dtype=np.uint8), np.frombuffer(self.body, dtype=np.uint8)))
 
     @staticmethod
-    def from_array(positions_dtype, positions):
-        glTF = GlTF()
-
-        return glTF
-
-    @staticmethod
-    def from_wkb(wkbs, bboxes, transform, binary = True, uri = None):
+    def from_wkb(wkbs, bboxes, transform, binary = True, batched = True, uri = None):
         """
         Parameters
         ----------
@@ -78,6 +70,7 @@ class GlTF(object):
         binVertices = []
         binIndices = []
         binNormals = []
+        binIds = []
         nVertices = []
         nIndices = []
         for i in range(0,len(nodes)):
@@ -88,19 +81,22 @@ class GlTF(object):
             binNormals.append(b''.join(ptsIdx[1]))
             nVertices.append(len(ptsIdx[0]))
             nIndices.append(len(ptsIdx[2]))
+            if batched:
+                binIds.append(np.full(len(ptsIdx[0]), i, dtype=np.uint16))
 
-        glTF.header = compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb, binary, uri)
-        glTF.body = compute_binary(binVertices, binIndices, binNormals)
+        glTF.header = compute_header(binVertices, binIndices, binNormals, binIds, nVertices, nIndices, bb, transform, binary, batched, uri)
+        glTF.body = compute_binary(binVertices, binIndices, binNormals, binIds)
 
         return glTF
 
-def compute_binary(binVertices, binIndices, binNormals):
-    binary = b''.join(binVertices)
-    binary = binary + b''.join(binNormals)
-    binary = binary + b''.join(binIndices)
-    return binary
+def compute_binary(binVertices, binIndices, binNormals, binIds):
+    bv = b''.join(binVertices)
+    bi = b''.join(binIndices)
+    bn = b''.join(binNormals)
+    bid = b''.join(binIds)
+    return bv + bn + bi + bid
 
-def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb, bgltf, uri):
+def compute_header(binVertices, binIndices, binNormals, binIds, nVertices, nIndices, bb, transform, bgltf, batched, uri):
     # Buffer
     meshNb = len(binVertices)
     sizeIdx = []
@@ -120,12 +116,6 @@ def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb,
 
     # Buffer view
     bufferViews = {
-        'BV_indices': {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeIdx),
-            'byteOffset': 2 * sum(sizeVce),
-            'target': 34963
-        },
         'BV_vertices': {
             'buffer': "binary_glTF",
             'byteLength': sum(sizeVce),
@@ -138,19 +128,24 @@ def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb,
             'byteOffset': sum(sizeVce),
             'target': 34962
         },
+        'BV_indices': {
+            'buffer': "binary_glTF",
+            'byteLength': sum(sizeIdx),
+            'byteOffset': 2 * sum(sizeVce),
+            'target': 34963
+        }
     }
+    if batched:
+        bufferViews['BV_ids'] = {
+            'buffer': "binary_glTF",
+            'byteLength': sum(sizeVce) / 6,
+            'byteOffset': sum(sizeVce) + sum(sizeIdx),
+            'target': 34962
+        }
 
     # Accessor
     accessors = {}
     for i in range(0, meshNb):
-        accessors["AI_" + str(i)] = {
-            'bufferView': "BV_indices",
-            'byteOffset': sum(sizeIdx[0:i]),
-            'byteStride': 2,
-            'componentType': 5123,
-            'count': nIndices[i],
-            'type': "SCALAR"
-        }
         accessors["AV_" + str(i)] = {
             'bufferView': "BV_vertices",
             'byteOffset': sum(sizeVce[0:i]),
@@ -171,6 +166,23 @@ def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb,
             'min': [-1,-1,-1],
             'type': "VEC3"
         }
+        accessors["AI_" + str(i)] = {
+            'bufferView': "BV_indices",
+            'byteOffset': sum(sizeIdx[0:i]),
+            'byteStride': 2,
+            'componentType': 5123,
+            'count': nIndices[i],
+            'type': "SCALAR"
+        }
+        if batched:
+            accessors["AD_" + str(i)] = {
+                'bufferView': "BV_ids",
+                'byteOffset': sum(sizeVce[0:i]) / 6,
+                'byteStride': 2,
+                'componentType': 5123,
+                'count': nVertices[i],
+                'type': "SCALAR"
+            }
 
     # Meshes
     meshes = {}
@@ -186,6 +198,8 @@ def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb,
                 "mode": 4
             }]
         }
+        if batched:
+            meshes["M" + str(i)]['primitives'][0]['attributes']['BATCHID'] = "AD_" + str(i)
 
     # Nodes
     nodes = {
@@ -222,6 +236,24 @@ def compute_header(binVertices, binIndices, binNormals, nVertices, nIndices, bb,
             }
         }
     }
+
+    # Technique for batched glTF
+    """if batched:
+        header['materials']['defaultMaterial']['technique'] = "T0"
+        header['techniques'] = {
+            "T0": {
+                "attributes": {
+                    "a_batchId": "batchId"
+                },
+                "parameters": {
+                    "batchId": {
+                        "semantic": "_BATCHID",
+                        "type": 5123
+                    }
+                }
+            }
+        }
+    """
 
     if len(extensions) != 0:
         header["extensionsUsed"] = extensions
@@ -344,28 +376,3 @@ def parse(wkb):
             polygon.append(line)
         multiPolygon.append(polygon);
     return multiPolygon;
-
-# TODO: remove
-import binascii
-if __name__ == "__main__":
-    wkb = binascii.unhexlify("01f70300000f00000001eb03000001000000050000000000240857001fc0000000f0c16b1dc000514b73bb89fe3f0000c0b4a83f1fc00000805ad3fcf7bf00514b73bb89fe3f0000c0b4a83f1fc00000805ad3fcf7bf40ba11164d6e00c00000240857001fc0000000f0c16b1dc040ba11164d6e00c00000240857001fc0000000f0c16b1dc000514b73bb89fe3f01eb030000010000000500000000003023f5be0f40000040800ced1cc000514b73bb89fe3f0000240857001fc0000000f0c16b1dc000514b73bb89fe3f0000240857001fc0000000f0c16b1dc040ba11164d6e00c000003023f5be0f40000040800ced1cc040ba11164d6e00c000003023f5be0f40000040800ced1cc000514b73bb89fe3f01eb030000010000000500000000003023f5be0f40000040800ced1cc040ba11164d6e00c00000f8c951400f400000c09bfd01f6bf40ba11164d6e00c00000f8c951400f400000c09bfd01f6bf00514b73bb89fe3f00003023f5be0f40000040800ced1cc000514b73bb89fe3f00003023f5be0f40000040800ced1cc040ba11164d6e00c001eb03000001000000050000000000d8f6769b21400000c0b12e2ef5bf40ba11164d6e00c000002477d86c2140000010527e321d4040ba11164d6e00c000002477d86c2140000010527e321d4000895fb14e6e00400000d8f6769b21400000c0b12e2ef5bf00895fb14e6e00400000d8f6769b21400000c0b12e2ef5bf40ba11164d6e00c001eb030000010000000500000000002477d86c2140000010527e321d4040ba11164d6e00c000009a5ab67e21c000006024b4751c4040ba11164d6e00c000009a5ab67e21c000006024b4751c4000895fb14e6e004000002477d86c2140000010527e321d4000895fb14e6e004000002477d86c2140000010527e321d4040ba11164d6e00c001eb030000010000000500000000005ab9175021c0000080685721f8bf00895fb14e6e004000009a5ab67e21c000006024b4751c4000895fb14e6e004000009a5ab67e21c000006024b4751c4040ba11164d6e00c000005ab9175021c0000080685721f8bf40ba11164d6e00c000005ab9175021c0000080685721f8bf00895fb14e6e004001eb03000001000000040000000000c0b4a83f1fc00000805ad3fcf7bf00895fb14e6e00400000dc09f67720c00000c0e7150ff8bf40ba11164d6e00c00000c0b4a83f1fc00000805ad3fcf7bf00514b73bb89fe3f0000c0b4a83f1fc00000805ad3fcf7bf00895fb14e6e004001eb03000001000000040000000000c0b4a83f1fc00000805ad3fcf7bf00514b73bb89fe3f0000dc09f67720c00000c0e7150ff8bf40ba11164d6e00c00000c0b4a83f1fc00000805ad3fcf7bf40ba11164d6e00c00000c0b4a83f1fc00000805ad3fcf7bf00514b73bb89fe3f01eb03000001000000040000000000dc09f67720c00000c0e7150ff8bf40ba11164d6e00c000005ab9175021c0000080685721f8bf00895fb14e6e004000005ab9175021c0000080685721f8bf40ba11164d6e00c00000dc09f67720c00000c0e7150ff8bf40ba11164d6e00c001eb03000001000000040000000000c0b4a83f1fc00000805ad3fcf7bf00895fb14e6e004000005ab9175021c0000080685721f8bf00895fb14e6e00400000dc09f67720c00000c0e7150ff8bf40ba11164d6e00c00000c0b4a83f1fc00000805ad3fcf7bf00895fb14e6e004001eb03000001000000040000000000d8f6769b21400000c0b12e2ef5bf00895fb14e6e0040000054698b6b1940000000ad1698f5bf40ba11164d6e00c00000d8f6769b21400000c0b12e2ef5bf40ba11164d6e00c00000d8f6769b21400000c0b12e2ef5bf00895fb14e6e004001eb03000001000000040000000000d8f6769b21400000c0b12e2ef5bf00895fb14e6e00400000f8c951400f400000c09bfd01f6bf00895fb14e6e0040000054698b6b1940000000ad1698f5bf40ba11164d6e00c00000d8f6769b21400000c0b12e2ef5bf00895fb14e6e004001eb0300000100000004000000000054698b6b1940000000ad1698f5bf40ba11164d6e00c00000f8c951400f400000c09bfd01f6bf00895fb14e6e00400000f8c951400f400000c09bfd01f6bf00514b73bb89fe3f000054698b6b1940000000ad1698f5bf40ba11164d6e00c001eb0300000100000004000000000054698b6b1940000000ad1698f5bf40ba11164d6e00c00000f8c951400f400000c09bfd01f6bf00514b73bb89fe3f0000f8c951400f400000c09bfd01f6bf40ba11164d6e00c0000054698b6b1940000000ad1698f5bf40ba11164d6e00c001eb03000001000000050000000000f8c951400f400000c09bfd01f6bf00895fb14e6e00400000c0b4a83f1fc00000805ad3fcf7bf00895fb14e6e00400000c0b4a83f1fc00000805ad3fcf7bf00514b73bb89fe3f0000f8c951400f400000c09bfd01f6bf00514b73bb89fe3f0000f8c951400f400000c09bfd01f6bf00895fb14e6e0040")
-
-    box = [[-8.74748499994166, -7.35523200035095, -2.05385796777344], [8.8036420000717, 7.29930999968201, 2.05386103222656]]
-    transform = np.array([
-        [1,0,0,1842015.125],
-        [0,1,0,5177109.25],
-        [0,0,1,247.87364196777344],
-        [0,0,0,1]], dtype=float) # translation : 1842015.125, 5177109.25, 247.87364196777344
-    transform = transform.flatten('F')
-    glTF = GlTF.from_wkb([wkb], [box], transform)
-
-    f = open("test.gltf", 'w')
-    f.write(json.dumps(glTF.header, separators=(',', ':')))
-    f.close()
-    f = open("test.bin", 'bw')
-    f.write(bytes(glTF.body))
-    f.close()
-
-    f = open("test.glb", 'bw')
-    f.write(bytes(glTF.to_array()))
-    f.close()

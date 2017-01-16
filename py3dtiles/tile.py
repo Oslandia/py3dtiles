@@ -42,6 +42,7 @@ class TileType(Enum):
 
     UNKNWON = 0
     POINTCLOUD = 1
+    BATCHED3DMODEL = 2
 
 
 class TileHeader(ABC):

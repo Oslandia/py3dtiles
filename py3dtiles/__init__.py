@@ -7,3 +7,4 @@ from .tile import Tile
 from .feature_table import Feature
 from .gltf import GlTF
 from .pnts import Pnts
+from .b3dm import B3dm
