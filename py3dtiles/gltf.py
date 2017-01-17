@@ -66,48 +66,41 @@ class GlTF(object):
 
             bb.append(bbox)
 
-        data = ([], [], [], [])
         binVertices = []
-        binIndices = []
         binNormals = []
         binIds = []
         nVertices = []
-        nIndices = []
         for i in range(0,len(nodes)):
-            ptsIdx = index(nodes[i], normals[i])
-            packedVertices = b''.join(ptsIdx[0])
+            (verticeArray, normalArray) = trianglesToArrays(nodes[i], normals[i])
+            packedVertices = b''.join(verticeArray)
             binVertices.append(packedVertices)
-            binIndices.append(struct.pack('H'*len(ptsIdx[2]), *ptsIdx[2]))
-            binNormals.append(b''.join(ptsIdx[1]))
-            nVertices.append(len(ptsIdx[0]))
-            nIndices.append(len(ptsIdx[2]))
+            binNormals.append(b''.join(normalArray))
+            nVertices.append(len(verticeArray))
             if batched:
-                binIds.append(np.full(len(ptsIdx[0]), i, dtype=np.uint16))
+                binIds.append(np.full(len(verticeArray), i, dtype=np.uint16))
 
-        glTF.header = compute_header(binVertices, binIndices, binNormals, binIds, nVertices, nIndices, bb, transform, binary, batched, uri)
-        glTF.body = compute_binary(binVertices, binIndices, binNormals, binIds)
+        glTF.header = compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, binary, batched, uri)
+        glTF.body = compute_binary(binVertices, binNormals, binIds)
 
         return glTF
 
-def compute_binary(binVertices, binIndices, binNormals, binIds):
+def compute_binary(binVertices, binNormals, binIds):
     bv = b''.join(binVertices)
-    bi = b''.join(binIndices)
     bn = b''.join(binNormals)
     bid = b''.join(binIds)
-    return bv + bn + bi + bid
+    return bv + bn + bid
 
-def compute_header(binVertices, binIndices, binNormals, binIds, nVertices, nIndices, bb, transform, bgltf, batched, uri):
+def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bgltf, batched, uri):
     # Buffer
     meshNb = len(binVertices)
     sizeIdx = []
     sizeVce = []
     for i in range(0, meshNb):
         sizeVce.append(len(binVertices[i]))
-        sizeIdx.append(len(binIndices[i]))
 
     buffers = {
         'binary_glTF': {
-            'byteLength': 2 * sum(sizeVce) + sum(sizeIdx),
+            'byteLength': 13 / 6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
             'type': "arraybuffer"
         }
     }
@@ -127,87 +120,119 @@ def compute_header(binVertices, binIndices, binNormals, binIds, nVertices, nIndi
             'byteLength': sum(sizeVce),
             'byteOffset': sum(sizeVce),
             'target': 34962
-        },
-        'BV_indices': {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeIdx),
-            'byteOffset': 2 * sum(sizeVce),
-            'target': 34963
         }
     }
     if batched:
         bufferViews['BV_ids'] = {
             'buffer': "binary_glTF",
             'byteLength': sum(sizeVce) / 6,
-            'byteOffset': sum(sizeVce) + sum(sizeIdx),
+            'byteOffset': 2 * sum(sizeVce),
             'target': 34962
         }
 
     # Accessor
     accessors = {}
-    for i in range(0, meshNb):
-        accessors["AV_" + str(i)] = {
+    if batched:
+        accessors["AV"] = {
             'bufferView': "BV_vertices",
-            'byteOffset': sum(sizeVce[0:i]),
+            'byteOffset': 0,
             'byteStride': 12,
             'componentType': 5126,
-            'count': nVertices[i],
-            'max': [bb[i][0][1], bb[i][0][2], bb[i][0][0]],
-            'min': [bb[i][1][1], bb[i][1][2], bb[i][1][0]],
+            'count': sum(nVertices),
+            'max': [max([bb[i][0][1] for i in range(0, meshNb)]),
+                    max([bb[i][0][2] for i in range(0, meshNb)]),
+                    max([bb[i][0][0] for i in range(0, meshNb)])],
+            'min': [min([bb[i][1][1] for i in range(0, meshNb)]),
+                    min([bb[i][1][2] for i in range(0, meshNb)]),
+                    min([bb[i][1][0] for i in range(0, meshNb)])],
             'type': "VEC3"
         }
-        accessors["AN_" + str(i)] = {
+        accessors["AN"] = {
             'bufferView': "BV_normals",
-            'byteOffset': sum(sizeVce[0:i]),
+            'byteOffset': 0,
             'byteStride': 12,
             'componentType': 5126,
-            'count': nVertices[i],
+            'count': sum(nVertices),
             'max': [1,1,1],
             'min': [-1,-1,-1],
             'type': "VEC3"
         }
-        accessors["AI_" + str(i)] = {
-            'bufferView': "BV_indices",
-            'byteOffset': sum(sizeIdx[0:i]),
+        accessors["AD"] = {
+            'bufferView': "BV_ids",
+            'byteOffset': 0,
             'byteStride': 2,
             'componentType': 5123,
-            'count': nIndices[i],
+            'count': sum(nVertices),
             'type': "SCALAR"
         }
-        if batched:
-            accessors["AD_" + str(i)] = {
-                'bufferView': "BV_ids",
-                'byteOffset': sum(sizeVce[0:i]) / 6,
-                'byteStride': 2,
-                'componentType': 5123,
+    else:
+        for i in range(0, meshNb):
+            accessors["AV_" + str(i)] = {
+                'bufferView': "BV_vertices",
+                'byteOffset': sum(sizeVce[0:i]),
+                'byteStride': 12,
+                'componentType': 5126,
                 'count': nVertices[i],
-                'type': "SCALAR"
+                'max': [bb[i][0][1], bb[i][0][2], bb[i][0][0]],
+                'min': [bb[i][1][1], bb[i][1][2], bb[i][1][0]],
+                'type': "VEC3"
             }
+            accessors["AN_" + str(i)] = {
+                'bufferView': "BV_normals",
+                'byteOffset': sum(sizeVce[0:i]),
+                'byteStride': 12,
+                'componentType': 5126,
+                'count': nVertices[i],
+                'max': [1,1,1],
+                'min': [-1,-1,-1],
+                'type': "VEC3"
+            }
+
 
     # Meshes
     meshes = {}
-    for i in range(0, meshNb):
-        meshes["M" + str(i)] = {
+    if batched:
+        meshes["M"] = {
             'primitives': [{
                 'attributes': {
-                    "POSITION": "AV_" + str(i),
-                    "NORMAL": "AN_" + str(i)
+                    "POSITION": "AV",
+                    "NORMAL": "AN",
+                    "BATCHID": "AD"
                 },
-                "indices": "AI_" + str(i),
                 "material": "defaultMaterial",
                 "mode": 4
             }]
         }
-        if batched:
-            meshes["M" + str(i)]['primitives'][0]['attributes']['BATCHID'] = "AD_" + str(i)
+    else:
+        for i in range(0, meshNb):
+            meshes["M" + str(i)] = {
+                'primitives': [{
+                    'attributes': {
+                        "POSITION": "AV_" + str(i),
+                        "NORMAL": "AN_" + str(i)
+                    },
+                    "indices": "AI_" + str(i),
+                    "material": "defaultMaterial",
+                    "mode": 4
+                }]
+            }
+
 
     # Nodes
-    nodes = {
-        'node': {
-            'matrix': [float(e) for e in transform],
-            'meshes': ["M" + str(i) for i in range(0,meshNb)]
+    if batched:
+        nodes = {
+            'node': {
+                'matrix': [float(e) for e in transform],
+                'meshes': ["M"]
+            }
         }
-    }
+    else:
+        nodes = {
+            'node': {
+                'matrix': [float(e) for e in transform],
+                'meshes': ["M" + str(i) for i in range(0,meshNb)]
+            }
+        }
     # TODO: one node per feature would probably be better
 
     # Extensions
@@ -260,32 +285,15 @@ def compute_header(binVertices, binIndices, binNormals, binIds, nVertices, nIndi
 
     return header
 
-
-def index(triangles, normals):
-    """
-    Creates an index for points
-    Replaces points in triangles by their index
-    """
-    index = {}
-    indices = []
-    orderedPoints = []
-    orderedNormals = []
-    maxIdx = 0
-
+def trianglesToArrays(triangles, normals):
+    vertice = []
+    normalArray = []
     for i in range(0, len(triangles)):
         n = normals[i]
-        for pt in triangles[i]:
-            if (n.tostring(),pt.tostring()) in index:
-                indices.append(index[(n.tostring(),pt.tostring())])
-            else:
-                orderedPoints.append(pt)
-                orderedNormals.append(n)
-                index[(n.tostring(),pt.tostring())] = maxIdx
-                indices.append(maxIdx)
-                maxIdx+=1
-
-    return (orderedPoints, orderedNormals, indices)
-
+        for vertex in triangles[i]:
+            vertice.append(vertex)
+            normalArray.append(n)
+    return (vertice, normalArray)
 
 def triangulate(polygon):
     """
