@@ -45,9 +45,10 @@ class TestTileBuilder(unittest.TestCase):
         # get an array
         tile_arr = t.to_array()
         self.assertEqual(t.header.version, 1.0)
-        self.assertEqual(t.header.tile_byte_length, 3036)
+        self.assertEqual(t.header.tile_byte_length, 3040)
         self.assertEqual(t.header.bt_json_byte_length, 0)
         self.assertEqual(t.header.bt_bin_byte_length, 0)
-        self.assertEqual(t.header.bt_length, 0)
+        self.assertEqual(t.header.ft_json_byte_length, 0)
+        self.assertEqual(t.header.ft_bin_byte_length, 0)
 
-        t.save_as("/tmp/py3dtiles_test_build_1.b3dm")
+        # t.save_as("/tmp/py3dtiles_test_build_1.b3dm")
