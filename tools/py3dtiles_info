@@ -34,6 +34,13 @@ def print_info(filename):
         print("-----------")
         f = tile.body.feature_table.feature(0)
         d = f.positions
+        header = tile.body.feature_table.header.to_json()
+        if 'POSITION_QUANTIZED' in header:
+            offsets = header['QUANTIZED_VOLUME_OFFSET']
+            scales = header['QUANTIZED_VOLUME_SCALE']
+            d['X'] = d['X'] * scales[0] + offsets[0]
+            d['Y'] = d['Y'] * scales[1] + offsets[1]
+            d['Z'] = d['Z'] * scales[2] + offsets[2]
         d.update(f.colors)
         print(d)
 

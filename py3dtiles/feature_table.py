@@ -112,6 +112,8 @@ class FeatureTableHeader(object):
         # global semantics
         self.points_length = 0
         self.rtc = None
+        self.quantized_volume_offset = None
+        self.quantized_volume_scale = None
 
     def to_array(self):
         jsond = self.to_json()
@@ -142,10 +144,15 @@ class FeatureTableHeader(object):
         if self.colors == SemanticPoint.RGB:
             jsond['RGB'] = offset
 
+        if self.quantized_volume_offset:
+            jsond['QUANTIZED_VOLUME_OFFSET'] = self.quantized_volume_offset
+            jsond['QUANTIZED_VOLUME_SCALE'] = self.quantized_volume_scale
+
         return jsond
 
     @staticmethod
-    def from_dtype(positions_dtype, colors_dtype, npoints):
+    def from_dtype(positions_dtype, colors_dtype, npoints,
+                   quantized_volume_offset=None, quantized_volume_scale=None):
         """
         Parameters
         ----------
@@ -154,6 +161,15 @@ class FeatureTableHeader(object):
 
         colors_dtype : numpy.dtype
             Numpy description of a colors.
+
+        npoints : float
+            Number of points.
+
+        quantized_volume_offset: array of float(3)
+            Numbers defining the offset for the quantized volume.
+
+        quantized_volume_scale: array of float(3)
+            Numbers defining the scale for the quantized volume.
 
         Returns
         -------
@@ -180,6 +196,9 @@ class FeatureTableHeader(object):
                 fth.positions_dtype = np.dtype([('X', np.uint16),
                                                 ('Y', np.uint16),
                                                 ('Z', np.uint16)])
+                if quantized_volume_offset and quantized_volume_scale:
+                    fth.quantized_volume_offset = quantized_volume_offset
+                    fth.quantized_volume_scale = quantized_volume_scale
 
         # search colors
         if colors_dtype is not None:
@@ -202,7 +221,6 @@ class FeatureTableHeader(object):
         else:
             fth.colors = SemanticPoint.NONE
             fth.colors_dtype = None
-
         return fth
 
     @staticmethod
@@ -221,7 +239,6 @@ class FeatureTableHeader(object):
 
         jsond = json.loads(array.tostring().decode('utf-8'))
         fth = FeatureTableHeader()
-
         # search position
         if "POSITION" in jsond:
             fth.positions = SemanticPoint.POSITION
@@ -235,6 +252,8 @@ class FeatureTableHeader(object):
             fth.positions_dtype = np.dtype([('X', np.uint16),
                                             ('Y', np.uint16),
                                             ('Z', np.uint16)])
+            fth.quantized_volume_offset = jsond['QUANTIZED_VOLUME_OFFSET']
+            fth.quantized_volume_scale = jsond['QUANTIZED_VOLUME_SCALE']
         else:
             fth.positions = SemanticPoint.NONE
             fth.positions_offset = 0
@@ -261,7 +280,6 @@ class FeatureTableHeader(object):
             fth.rtc = jsond['RTC_CENTER']
         else:
             fth.rtc = None
-
         return fth
 
 
