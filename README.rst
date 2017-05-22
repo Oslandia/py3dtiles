@@ -165,3 +165,11 @@ previously created:
     First point
     -----------
     {'Y': 2.1900001, 'X': 4.4889998, 'Z': -0.17}
+
+
+Third party assets
+------------------
+
+Dragon model from Analytical Graphics Inc.'s `3d-tiles samples`_
+
+.. _3d-tiles samples: https://github.com/AnalyticalGraphicsInc/3d-tiles-samples

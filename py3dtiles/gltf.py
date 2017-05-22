@@ -25,7 +25,39 @@ class GlTF(object):
                                   len(scene),
                                   0], dtype=np.uint32)
 
-        return np.concatenate((binaryHeader, binaryHeader2.view(np.uint8), np.fromstring(scene, dtype=np.uint8), np.frombuffer(self.body, dtype=np.uint8)))
+        return np.concatenate((binaryHeader, binaryHeader2.view(np.uint8), np.fromstring(scene, dtype=np.uint8), self.body))
+
+    @staticmethod
+    def from_array(array):
+        """
+        Parameters
+        ----------
+        array : numpy.array
+
+        Returns
+        -------
+        glTF : GlTf
+        """
+
+        glTF = GlTF()
+
+        if struct.unpack("4s", array[0:4])[0] != b"glTF":
+            raise RuntimeError("Array does not contain a binary glTF")
+
+        if struct.unpack("i", array[4:8])[0] != 1:
+            raise RuntimeError("Unsupported glTF version")
+
+        length = struct.unpack("i", array[8:12])[0]
+        content_length = struct.unpack("i", array[12:16])[0]
+
+        if struct.unpack("i", array[16:20])[0] != 0:
+            raise RuntimeError("Unsupported binary glTF content type")
+
+        header = struct.unpack(str(content_length) + "s", array[20:20+content_length])[0]
+        glTF.header = json.loads(header.decode("ascii"))
+        glTF.body = array[20+content_length:length]
+
+        return glTF
 
     @staticmethod
     def from_wkb(wkbs, bboxes, transform, binary = True, batched = True, uri = None):
@@ -80,7 +112,7 @@ class GlTF(object):
                 binIds.append(np.full(len(verticeArray), i, dtype=np.uint16))
 
         glTF.header = compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, binary, batched, uri)
-        glTF.body = compute_binary(binVertices, binNormals, binIds)
+        glTF.body = np.frombuffer(compute_binary(binVertices, binNormals, binIds), dtype=np.uint8)
 
         return glTF
 
