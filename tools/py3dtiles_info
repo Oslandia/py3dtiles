@@ -6,10 +6,7 @@ import argparse
 from py3dtiles import TileReader
 
 
-def print_info(filename):
-
-    tile = TileReader().read_file(filename)
-
+def print_pnts_info(tile):
     # tile header
     th = tile.header
     print("Tile Header")
@@ -36,6 +33,39 @@ def print_info(filename):
         d = f.positions
         d.update(f.colors)
         print(d)
+
+
+def print_b3dm_info(tile):
+    # tile header
+    th = tile.header
+    print("Tile Header")
+    print("-----------")
+    print("Magic Value: ", th.magic_value)
+    print("Version: ", th.version)
+    print("Tile byte length: ", th.tile_byte_length)
+    print("Feature table json byte length: ", th.ft_json_byte_length)
+    print("Feature table bin byte length: ", th.ft_bin_byte_length)
+    print("Batch table json byte length: ", th.bt_json_byte_length)
+    print("Batch table bin byte length: ", th.bt_bin_byte_length)
+
+    gltfh = tile.body.glTF.header
+    print("")
+    print("glTF Header")
+    print("-----------")
+    print(gltfh)
+
+
+def print_info(filename):
+
+    tile = TileReader().read_file(filename)
+    magic = tile.header.magic_value
+
+    if magic == "pnts":
+        print_pnts_info(tile)
+    elif magic == "b3dm":
+        print_b3dm_info(tile)
+    else:
+        raise RuntimeError("Unsupported format " + magic)
 
 if __name__ == '__main__':
     # arg parse
