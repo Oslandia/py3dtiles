@@ -5,6 +5,7 @@ import numpy as np
 from .tile import Tile, TileHeader, TileBody, TileType
 from .feature_table import FeatureTable, FeatureTableHeader, FeatureTableBody
 
+
 class Pnts(Tile):
 
     @staticmethod
@@ -102,7 +103,8 @@ class PntsHeader(TileHeader):
         ftb_arr = body.feature_table.body.to_array()
 
         # sync the tile header with feature table contents
-        self.tile_byte_length = len(fth_arr) + len(ftb_arr) + PntsHeader.BYTELENGTH
+        self.tile_byte_length = (len(fth_arr) + len(ftb_arr) +
+                                 PntsHeader.BYTELENGTH)
         self.ft_json_byte_length = len(fth_arr)
         self.ft_bin_byte_length = len(ftb_arr)
 
@@ -134,6 +136,7 @@ class PntsHeader(TileHeader):
         h.type = TileType.POINTCLOUD
 
         return h
+
 
 class PntsBody(TileBody):
     def __init__(self):

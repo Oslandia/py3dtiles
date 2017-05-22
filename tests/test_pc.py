@@ -81,7 +81,8 @@ class TestTileBuilder(unittest.TestCase):
             p = f.positions
             c = f.colors
             pos = np.array([(p['X'], p['Y'], p['Z'])], dtype=pdt).view('uint8')
-            col = np.array([(c['Red'], c['Green'], c['Blue'])], dtype=cdt).view('uint8')
+            col = np.array([(c['Red'], c['Green'], c['Blue'])],
+                           dtype=cdt).view('uint8')
             newf = Feature.from_array(pdt, pos, cdt, col)
             features.append(newf)
 

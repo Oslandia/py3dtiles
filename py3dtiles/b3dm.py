@@ -5,6 +5,7 @@ import numpy as np
 from .tile import Tile, TileHeader, TileBody, TileType
 from .gltf import GlTF
 
+
 class B3dm(Tile):
 
     @staticmethod
@@ -51,8 +52,10 @@ class B3dm(Tile):
             raise RuntimeError("Invalid byte length in header")
 
         # build tile body
-        b_len = h.ft_json_byte_length + h.ft_bin_byte_length + h.bt_json_byte_length + h.bt_bin_byte_length
-        b_arr = array[B3dmHeader.BYTELENGTH:h.tile_byte_length-B3dmHeader.BYTELENGTH]
+        b_len = (h.ft_json_byte_length + h.ft_bin_byte_length
+                 + h.bt_json_byte_length + h.bt_bin_byte_length)
+        b_arr = (array[B3dmHeader.BYTELENGTH:h.tile_byte_length
+                 - B3dmHeader.BYTELENGTH])
         b = B3dmBody.from_array(h, b_arr)
 
         # build Tile with header and body
@@ -96,18 +99,18 @@ class B3dmHeader(TileHeader):
 
         # extract array
         glTF_arr = body.glTF.to_array()
-        #bth_arr = body.batch_table.header.to_array()
-        #btb_arr = body.batch_table.body.to_array()
-        #fth_arr = body.feature_table.header.to_array()
-        #ftb_arr = body.feature_table.body.to_array()
+        # bth_arr = body.batch_table.header.to_array()
+        # btb_arr = body.batch_table.body.to_array()
+        # fth_arr = body.feature_table.header.to_array()
+        # ftb_arr = body.feature_table.body.to_array()
 
         # sync the tile header with feature table contents
         self.tile_byte_length = len(glTF_arr) + B3dmHeader.BYTELENGTH
-            # + len(bth_arr) + len(btb_arr) + len(fth_arr) + len(ftb_arr)
-        #self.bt_json_byte_length = len(bth_arr)
-        #self.bt_bin_byte_length = len(btb_arr)
-        #self.ft_json_byte_length = len(fth_arr)
-        #self.ft_bin_byte_length = len(ftb_arr)
+        #    + len(bth_arr) + len(btb_arr) + len(fth_arr) + len(ftb_arr)
+        # self.bt_json_byte_length = len(bth_arr)
+        # self.bt_bin_byte_length = len(btb_arr)
+        # self.ft_json_byte_length = len(fth_arr)
+        # self.ft_bin_byte_length = len(ftb_arr)
 
     @staticmethod
     def from_array(array):
@@ -138,10 +141,11 @@ class B3dmHeader(TileHeader):
 
         return h
 
+
 class B3dmBody(TileBody):
     def __init__(self):
-        #self.batch_table = BatchTable()
-        #self.feature_table = FeatureTable()
+        # self.batch_table = BatchTable()
+        # self.feature_table = FeatureTable()
         self.glTF = GlTF()
 
     def to_array(self):
@@ -193,7 +197,8 @@ class B3dmBody(TileBody):
         # bt = BatchTable.from_array(th, bt_arr)
 
         # build glTF
-        glTF_len = th.tile_byte_length - ft_len - bt_len - B3dmHeader.BYTELENGTH
+        glTF_len = (th.tile_byte_length - ft_len - bt_len
+                    - B3dmHeader.BYTELENGTH)
         glTF_arr = array[ft_len+bt_len:ft_len+bt_len+glTF_len]
         glTF = GlTF.from_array(glTF_arr)
 

@@ -6,16 +6,17 @@ import triangle
 import numpy as np
 import json
 
+
 class GlTF(object):
 
     def __init__(self):
         self.header = {}
         self.body = None
 
-    def to_array(self): # bgl
+    def to_array(self):  # bgl
         scene = json.dumps(self.header, separators=(',', ':'))
 
-        #scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
+        # scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
         # body must be 4-byte aligned
         scene += ' '*(4 - len(scene) % 4)
 
@@ -25,7 +26,10 @@ class GlTF(object):
                                   len(scene),
                                   0], dtype=np.uint32)
 
-        return np.concatenate((binaryHeader, binaryHeader2.view(np.uint8), np.fromstring(scene, dtype=np.uint8), self.body))
+        return np.concatenate((binaryHeader,
+                               binaryHeader2.view(np.uint8),
+                               np.fromstring(scene, dtype=np.uint8),
+                               self.body))
 
     @staticmethod
     def from_array(array):
@@ -53,14 +57,15 @@ class GlTF(object):
         if struct.unpack("i", array[16:20])[0] != 0:
             raise RuntimeError("Unsupported binary glTF content type")
 
-        header = struct.unpack(str(content_length) + "s", array[20:20+content_length])[0]
+        header = struct.unpack(str(content_length) + "s",
+                               array[20:20+content_length])[0]
         glTF.header = json.loads(header.decode("ascii"))
         glTF.body = array[20+content_length:length]
 
         return glTF
 
     @staticmethod
-    def from_wkb(wkbs, bboxes, transform, binary = True, batched = True, uri = None):
+    def from_wkb(wkbs, bboxes, transform, binary=True, batched=True, uri=None):
         """
         Parameters
         ----------
@@ -102,8 +107,9 @@ class GlTF(object):
         binNormals = []
         binIds = []
         nVertices = []
-        for i in range(0,len(nodes)):
-            (verticeArray, normalArray) = trianglesToArrays(nodes[i], normals[i])
+        for i in range(0, len(nodes)):
+            (verticeArray, normalArray) = trianglesToArrays(nodes[i],
+                                                            normals[i])
             packedVertices = b''.join(verticeArray)
             binVertices.append(packedVertices)
             binNormals.append(b''.join(normalArray))
@@ -111,10 +117,14 @@ class GlTF(object):
             if batched:
                 binIds.append(np.full(len(verticeArray), i, dtype=np.uint16))
 
-        glTF.header = compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, binary, batched, uri)
-        glTF.body = np.frombuffer(compute_binary(binVertices, binNormals, binIds), dtype=np.uint8)
+        glTF.header = compute_header(binVertices, binNormals, binIds,
+                                     nVertices, bb, transform,
+                                     binary, batched, uri)
+        glTF.body = np.frombuffer(
+            compute_binary(binVertices, binNormals, binIds), dtype=np.uint8)
 
         return glTF
+
 
 def compute_binary(binVertices, binNormals, binIds):
     bv = b''.join(binVertices)
@@ -122,7 +132,10 @@ def compute_binary(binVertices, binNormals, binIds):
     bid = b''.join(binIds)
     return bv + bn + bid
 
-def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bgltf, batched, uri):
+
+def compute_header(binVertices, binNormals, binIds,
+                   nVertices, bb, transform,
+                   bgltf, batched, uri):
     # Buffer
     meshNb = len(binVertices)
     sizeIdx = []
@@ -132,11 +145,11 @@ def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bg
 
     buffers = {
         'binary_glTF': {
-            'byteLength': 13 / 6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
+            'byteLength': 13/6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
             'type': "arraybuffer"
         }
     }
-    if uri != None:
+    if uri is not None:
         buffers["binary_glTF"]["uri"] = uri
 
     # Buffer view
@@ -185,8 +198,8 @@ def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bg
             'byteStride': 12,
             'componentType': 5126,
             'count': sum(nVertices),
-            'max': [1,1,1],
-            'min': [-1,-1,-1],
+            'max': [1, 1, 1],
+            'min': [-1, -1, -1],
             'type': "VEC3"
         }
         accessors["AD"] = {
@@ -215,11 +228,10 @@ def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bg
                 'byteStride': 12,
                 'componentType': 5126,
                 'count': nVertices[i],
-                'max': [1,1,1],
-                'min': [-1,-1,-1],
+                'max': [1, 1, 1],
+                'min': [-1, -1, -1],
                 'type': "VEC3"
             }
-
 
     # Meshes
     meshes = {}
@@ -249,7 +261,6 @@ def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bg
                 }]
             }
 
-
     # Nodes
     if batched:
         nodes = {
@@ -262,7 +273,7 @@ def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bg
         nodes = {
             'node': {
                 'matrix': [float(e) for e in transform],
-                'meshes': ["M" + str(i) for i in range(0,meshNb)]
+                'meshes': ["M" + str(i) for i in range(0, meshNb)]
             }
         }
     # TODO: one node per feature would probably be better
@@ -317,6 +328,7 @@ def compute_header(binVertices, binNormals, binIds, nVertices, bb, transform, bg
 
     return header
 
+
 def trianglesToArrays(triangles, normals):
     vertice = []
     normalArray = []
@@ -326,6 +338,7 @@ def trianglesToArrays(triangles, normals):
             vertice.append(vertex)
             normalArray.append(n)
     return (vertice, normalArray)
+
 
 def triangulate(polygon):
     """
@@ -338,31 +351,34 @@ def triangulate(polygon):
     segments = list(range(len(polygon)))
     segments.append(0)
     # triangulation of the polygon projected on planes (xy) (zx) or (yz)
-    if(math.fabs(vectProd[0]) > math.fabs(vectProd[1]) and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
+    if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
+       and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
         # (yz) projection
-        for v in range(0,len(polygon)):
+        for v in range(0, len(polygon)):
             polygon2D.append([polygon[v][1], polygon[v][2]])
     elif(math.fabs(vectProd[1]) > math.fabs(vectProd[2])):
         # (zx) projection
-        for v in range(0,len(polygon)):
+        for v in range(0, len(polygon)):
             polygon2D.append([polygon[v][0], polygon[v][2]])
     else:
         # (xy) projextion
-        for v in range(0,len(polygon)):
+        for v in range(0, len(polygon)):
             polygon2D.append([polygon[v][0], polygon[v][1]])
 
-    triangulation = triangle.triangulate({'vertices': polygon2D, 'segments': segments})
+    triangulation = triangle.triangulate({'vertices': polygon2D,
+                                          'segments': segments})
     if 'triangles' not in triangulation:    # if polygon is degenerate
         return []
     trianglesIdx = triangulation['triangles']
     triangles = []
 
     for t in trianglesIdx:
-        # triangulation may break triangle orientation, test it before adding triangles
+        # triangulation may break triangle orientation, test it before
+        # adding triangles
         if(t[0] > t[1] > t[2] or t[2] > t[0] > t[1] or t[1] > t[2] > t[0]):
-            triangles.append([polygon[t[1]], polygon[t[0]],polygon[t[2]]])
+            triangles.append([polygon[t[1]], polygon[t[0]], polygon[t[2]]])
         else:
-            triangles.append([polygon[t[0]], polygon[t[1]],polygon[t[2]]])
+            triangles.append([polygon[t[0]], polygon[t[1]], polygon[t[2]]])
 
     return triangles
 
@@ -372,10 +388,10 @@ def compute_normals(triangles):
     for t in triangles:
         U = t[1] - t[0]
         V = t[2] - t[0]
-        N = np.cross(U,V)
+        N = np.cross(U, V)
         norm = np.linalg.norm(N)
         if norm == 0:
-            normals.append(np.array([1,0,0], dtype=np.float32))
+            normals.append(np.array([1, 0, 0], dtype=np.float32))
         else:
             normals.append(N / norm)
     return normals
@@ -386,21 +402,22 @@ def parse(wkb):
     Expects Multipolygon Z
     """
     multiPolygon = []
-    #length = len(wkb)
-    #print(length)
-    #byteorder = struct.unpack('b', wkb[0:1])
-    #print(byteorder)
-    #geomtype = struct.unpack('I', wkb[1:5])    # 1006 (Multipolygon Z)
-    #print(geomtype)
+    # length = len(wkb)
+    # print(length)
+    # byteorder = struct.unpack('b', wkb[0:1])
+    # print(byteorder)
+    # geomtype = struct.unpack('I', wkb[1:5])    # 1006 (Multipolygon Z)
+    # print(geomtype)
     geomNb = struct.unpack('I', wkb[5:9])[0]
-    #print(geomNb)
-    #print(struct.unpack('b', wkb[9:10])[0])
-    #print(struct.unpack('I', wkb[10:14])[0])   # 1003 (Polygon)
-    #print(struct.unpack('I', wkb[14:18])[0])   # num lines
-    #print(struct.unpack('I', wkb[18:22])[0])   # num points
+    # print(geomNb)
+    # print(struct.unpack('b', wkb[9:10])[0])
+    # print(struct.unpack('I', wkb[10:14])[0])   # 1003 (Polygon)
+    # print(struct.unpack('I', wkb[14:18])[0])   # num lines
+    # print(struct.unpack('I', wkb[18:22])[0])   # num points
     offset = 9
     for i in range(0, geomNb):
-        offset += 5#struct.unpack('bI', wkb[offset:offset+5])[0]  # 1 (byteorder), 1003 (Polygon)
+        offset += 5  # struct.unpack('bI', wkb[offset:offset+5])[0]
+        # 1 (byteorder), 1003 (Polygon)
         lineNb = struct.unpack('I', wkb[offset:offset+4])[0]
         offset += 4
         polygon = []
@@ -409,10 +426,11 @@ def parse(wkb):
             offset += 4
             line = []
             for k in range(0, pointNb-1):
-                point = np.array(struct.unpack('ddd', wkb[offset:offset+24]), dtype=np.float32)
+                point = np.array(struct.unpack('ddd', wkb[offset:offset+24]),
+                                 dtype=np.float32)
                 offset += 24
                 line.append(point)
             offset += 24   # skip redundant point
             polygon.append(line)
-        multiPolygon.append(polygon);
-    return multiPolygon;
+        multiPolygon.append(polygon)
+    return multiPolygon
