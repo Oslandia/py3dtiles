@@ -12,6 +12,6 @@ install:
 
 script:
   - pip install flake8
-  - flake8 py3dtiles --exclude __init__.py
+  - flake8 py3dtiles
   - nosetests
   - py3dtiles_info tests/pointCloudRGB.pnts
