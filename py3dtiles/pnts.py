@@ -3,7 +3,7 @@ import struct
 import numpy as np
 
 from .tile import Tile, TileHeader, TileBody, TileType
-from .feature_table import FeatureTable, FeatureTableHeader, FeatureTableBody
+from .feature_table import FeatureTable
 
 
 class Pnts(Tile):
