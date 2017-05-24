@@ -52,8 +52,6 @@ class B3dm(Tile):
             raise RuntimeError("Invalid byte length in header")
 
         # build tile body
-        b_len = (h.ft_json_byte_length + h.ft_bin_byte_length
-                 + h.bt_json_byte_length + h.bt_bin_byte_length)
         b_arr = (array[B3dmHeader.BYTELENGTH:h.tile_byte_length
                  - B3dmHeader.BYTELENGTH])
         b = B3dmBody.from_array(h, b_arr)

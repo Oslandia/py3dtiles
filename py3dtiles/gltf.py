@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import struct
-import binascii
 import math
 import triangle
 import numpy as np
@@ -138,7 +137,6 @@ def compute_header(binVertices, binNormals, binIds,
                    bgltf, batched, uri):
     # Buffer
     meshNb = len(binVertices)
-    sizeIdx = []
     sizeVce = []
     for i in range(0, meshNb):
         sizeVce.append(len(binVertices[i]))

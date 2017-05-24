@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import struct
 import numpy as np
 from enum import Enum
 from abc import ABC, abstractmethod
-
-from .feature_table import FeatureTable, FeatureTableHeader, FeatureTableBody
 
 
 class Tile(ABC):
