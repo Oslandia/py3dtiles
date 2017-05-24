@@ -21,16 +21,16 @@ class TestTileReader(unittest.TestCase):
         self.assertEqual(tile.header.bt_json_byte_length, 0)
         self.assertEqual(tile.header.bt_bin_byte_length, 0)
 
-        f = open('tests/dragon_low_gltf_header.json', 'r')
-        gltf_header = json.loads(f.read())
+        with open('tests/dragon_low_gltf_header.json', 'r') as f:
+            gltf_header = json.loads(f.read())
         self.assertDictEqual(gltf_header, tile.body.glTF.header)
 
 
 class TestTileBuilder(unittest.TestCase):
 
     def test_build(self):
-        f = open('tests/building.wkb', 'rb')
-        wkb = f.read()
+        with open('tests/building.wkb', 'rb') as f:
+            wkb = f.read()
 
         box = [[-8.74748499994166, -7.35523200035095, -2.05385796777344],
                [8.8036420000717, 7.29930999968201, 2.05386103222656]]

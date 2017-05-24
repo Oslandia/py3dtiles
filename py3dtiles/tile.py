@@ -23,9 +23,8 @@ class Tile(ABC):
 
     def save_as(self, filename):
         tile_arr = self.to_array()
-        f = open(filename, 'bw')
-        f.write(bytes(tile_arr))
-        f.close()
+        with open(filename, 'bw') as f:
+            f.write(bytes(tile_arr))
 
     def sync(self):
         """
