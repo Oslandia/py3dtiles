@@ -70,6 +70,7 @@ about a Point Cloud file **py3dtiles\_info**.
 .. code-block:: python
 
     >>> from py3dtiles import TileReader
+    >>> from py3dtiles import Pnts
     >>>
     >>> filename = 'tests/pointCloudRGB.pnts'
     >>>
@@ -132,7 +133,7 @@ corresponding data type.
     {'Y': 2.19, 'X': 4.489, 'Z': -0.17}
     >>>
     >>> # create a tile directly from our feature. None is for "no colors".
-    >>> t  = Tile.from_features(dt, None, [f])
+    >>> t  = Pnts.from_features(dt, None, [f])
     >>>
     >>> # the tile is complete
     >>> t.body.feature_table.header.to_json()
@@ -164,3 +165,11 @@ previously created:
     First point
     -----------
     {'Y': 2.1900001, 'X': 4.4889998, 'Z': -0.17}
+
+
+Third party assets
+------------------
+
+Dragon model from Analytical Graphics Inc.'s `3d-tiles samples`_
+
+.. _3d-tiles samples: https://github.com/AnalyticalGraphicsInc/3d-tiles-samples

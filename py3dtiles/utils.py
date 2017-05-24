@@ -2,7 +2,8 @@
 
 import numpy as np
 import pyproj
-from .tile import Tile
+from .pnts import Pnts
+from .b3dm import B3dm
 
 
 def convert_to_ecef(x, y, z, epsg_input):
@@ -21,4 +22,9 @@ class TileReader(object):
         return None
 
     def read_array(self, array):
-        return Tile.from_array(array)
+        magic = ''.join([c.decode('UTF-8') for c in array[0:4].view('c')])
+        if magic == 'pnts':
+            return Pnts.from_array(array)
+        if magic == 'b3dm':
+            return B3dm.from_array(array)
+        return None
