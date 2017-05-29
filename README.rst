@@ -9,7 +9,7 @@ py3dtiles
 
 Python module to manage 3DTiles format.
 
-For now, only the Point Cloud specification is supported.
+For now, only the Point Cloud and the Batched 3D Model specifications are supported.
 
 py3dtiles is distributed under LGPL2 or later.
 
@@ -42,28 +42,53 @@ If you wan to run unit tests:
 Specifications
 --------------
 
-Point Cloud
-~~~~~~~~~~~
-
-Point Cloud Tile Format:
-https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/PointCloud
-
-.. image:: https://raw.githubusercontent.com/Oslandia/py3dtiles/master/docs/pc_layout.png
-    :width: 700px
-    :align: center
+Generic Tile
+~~~~~~~~~~~~
 
 The py3dtiles module provides some classes to fit into the
 specification:
 
 - *Tile* with a header *TileHeader* and a body *TileBody*
-- *TileHeader* represents the first 28 bytes (magic value, version, ...)
-- *TileBody* contains the feature table *FeatureTable* and the batch table (not supported for now)
-- *FeatureTable* with a header *FeatureTableHeader* and a *FeatureTableBody*
-- *FeatureTableBody* which contains features of type *Feature*
+- *TileHeader* represents the metadata of the tile (magic value, version, ...)
+- *TileBody* contains varying semantic and geometric data depending on the the tile's type
 
-Moreover, a utility class *TileReader* is available to read a *.pnts*
+Moreover, a utility class *TileReader* is available to read a tile
 file as well as a simple command line tool to retrieve basic information
-about a Point Cloud file **py3dtiles\_info**.
+about a tile: **py3dtiles\_info**.
+
+**How to use py3dtiles\_info**
+
+Here is an example on how to retrieve basic information about a tile, in this
+case *pointCloudRGB.pnts*:
+
+.. code-block:: shell
+
+    $ py3dtiles_info tests/pointCloudRGB.pnts
+    Tile Header
+    -----------
+    Magic Value:  pnts
+    Version:  1
+    Tile byte length:  15176
+    Feature table json byte length:  148
+    Feature table bin byte length:  15000
+
+    Feature Table Header
+    --------------------
+    {'POSITION': {'byteOffset': 0}, 'RGB': {'byteOffset': 12000}, 'POINTS_LENGTH': 1000, 'RTC_CENTER': [1215012.8828876738, -4736313.051199594, 4081605.22126042]}
+
+    First point
+    -----------
+    {'Z': -0.17107764, 'Red': 44, 'X': 2.19396, 'Y': 4.4896851, 'Green': 243, 'Blue': 209}
+
+Point Cloud
+~~~~~~~~~~~
+
+Points Tile Format:
+https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/PointCloud
+
+In the current implementation, the *Pnts* class only contains a *FeatureTable*
+(*FeatureTableHeader* and a *FeatureTableBody*, which contains features of type
+*Feature*).
 
 **How to read a .pnts file**
 
@@ -142,30 +167,80 @@ corresponding data type.
     >>> # to save our tile as a .pnts file
     >>> t.save_as("mypoints.pnts")
 
-**How to use py3dtiles\_info**
 
-If we want to retrieve basic information about the file *mypoints.pnts*
-previously created:
+Batched 3D Model
+~~~~~~~~~~~~~~~~
 
-.. code-block:: shell
+Batched 3D Model Tile Format:
+https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/Batched3DModel
 
-    $ py3dtiles_info mypoints.pnts
-    Tile Header
-    -----------
-    Magic Value:  pnts
-    Version:  1
-    Tile byte length:  88
-    Feature table json byte length:  48
-    Feature table bin byte length:  12
+**How to read a .b3dm file**
 
-    Feature Table Header
-    --------------------
-    {'POINTS_LENGTH': 1, 'POSITION': {'byteOffset': 0}}
+.. code-block:: python
 
-    First point
-    -----------
-    {'Y': 2.1900001, 'X': 4.4889998, 'Z': -0.17}
+    >>> from py3dtiles import TileReader
+    >>> from py3dtiles import B3dm
+    >>>
+    >>> filename = 'tests/dragon_low.b3dm'
+    >>>
+    >>> # read the file
+    >>> tile = TileReader().read_file(filename)
+    >>>
+    >>> # tile is an instance of the Tile class
+    >>> tile
+    <py3dtiles.tile.Tile>
+    >>>
+    >>> # extract information about the tile header
+    >>> th = tile.header
+    >>> th
+    <py3dtiles.b3dm.B3dmHeader>
+    >>> th.magic_value
+    'b3dm'
+    >>> th.tile_byte_length
+    47246
+    >>>
+    >>> # extract the glTF
+    >>> gltf = tile.body.glTF
+    >>> gltf
+    <py3dtiles.gltf.GlTF>
+    >>>
+    >>> # display gltf header's asset field
+    >>> gltf.header['asset']
+    {'premultipliedAlpha': True, 'profile': {'version': '1.0', 'api': 'WebGL'}, 'version': '1.0', 'generator': 'OBJ2GLTF'}
 
+**How to write a .b3dm file**
+
+To write a Batched 3D Model file, you have to import the geometry from a wkb
+file containing polyhedralsurfaces or multipolygons.
+
+.. code-block:: python
+
+    >>> import numpy as np
+    >>> from py3dtiles import GlTF
+    >>>
+    >>> # load a wkb file
+    >>> wkb = open('tests/building.wkb', 'rb').read()
+    >>>
+    >>> # define the geometry's bouding box
+    >>> box = [[-8.75, -7.36, -2.05], [8.80, 7.30, 2.05]]
+    >>>
+    >>> # define the geometry's world transformation
+    >>> transform = np.array([
+    ...             [1, 0, 0, 1842015.125],
+    ...             [0, 1, 0, 5177109.25],
+    ...             [0, 0, 1, 247.87364196777344],
+    ...             [0, 0, 0, 1]], dtype=float)
+    >>> transform.flatten('F')
+    >>>
+    >>> # generate the glTF part from the wkb file.
+    >>> # notice that from_wkb accepts array of wkbs and boxes for batching purposes.
+    >>> gltf = GlTF.from_wkb([wkb], [box], transform)
+    >>>
+    >>> # create a b3dm tile directly from the glTF.
+    >>> t = B3dm.from_glTF(glTF)
+    >>>
+    >>> # to save our tile as a .b3dm file
+    >>> t.save_as("mymodel.b3dm")
 
 Third party assets
 ------------------
