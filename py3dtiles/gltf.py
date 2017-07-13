@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import struct
-import math
-import triangle
 import numpy as np
 import json
 
@@ -64,15 +62,18 @@ class GlTF(object):
         return glTF
 
     @staticmethod
-    def from_wkb(wkbs, bboxes, transform, binary=True, batched=True, uri=None):
+    def from_binary_arrays(arrays, transform, binary=True, batched=True,
+                           uri=None):
         """
         Parameters
         ----------
-        wkbs : array
-            Array of wkbs
-
-        bboxes : array
-            Array of bounding boxes (numpy.array)
+        arrays : array of dictionaries
+            Each dictionary has the data for one geometry
+            arrays['position']: binary array of vertex positions
+            arrays['normal']: binary array of vertex normals
+            arrays['uv']: binary array of vertex texture coordinates
+                          (Not implemented yet)
+            arrays['bbox']: geometry bounding box (numpy.array)
 
         transform : numpy.array
             World coordinates transformation flattend matrix
@@ -83,44 +84,26 @@ class GlTF(object):
         """
 
         glTF = GlTF()
-        nodes = []
-        normals = []
-        bb = []
-        for wkb, bbox in zip(wkbs, bboxes):
-            mp = parse(bytes(wkb))
-            triangles = []
-            for poly in mp:
-                if(len(poly) != 1):
-                    print("No support for inner polygon rings")
-                else:
-                    if(len(poly[0]) > 3):
-                        triangles.extend(triangulate(poly[0]))
-                    else:
-                        triangles.append(poly[0])
-            nodes.append(triangles)
-            normals.append(compute_normals(triangles))
 
-            bb.append(bbox)
-
-        binVertices = []
+        binVertice = []
         binNormals = []
         binIds = []
-        nVertices = []
-        for i in range(0, len(nodes)):
-            (verticeArray, normalArray) = trianglesToArrays(nodes[i],
-                                                            normals[i])
-            packedVertices = b''.join(verticeArray)
-            binVertices.append(packedVertices)
-            binNormals.append(b''.join(normalArray))
-            nVertices.append(len(verticeArray))
+        nVertice = []
+        bb = []
+        for i, geometry in enumerate(arrays):
+            binVertice.append(geometry['position'])
+            binNormals.append(geometry['normal'])
+            n = round(len(geometry['position']) / 12)
+            nVertice.append(n)
+            bb.append(geometry['bbox'])
             if batched:
-                binIds.append(np.full(len(verticeArray), i, dtype=np.uint16))
+                binIds.append(np.full(n, i, dtype=np.uint16))
 
-        glTF.header = compute_header(binVertices, binNormals, binIds,
-                                     nVertices, bb, transform,
+        glTF.header = compute_header(binVertice, binNormals, binIds,
+                                     nVertice, bb, transform,
                                      binary, batched, uri)
         glTF.body = np.frombuffer(
-            compute_binary(binVertices, binNormals, binIds), dtype=np.uint8)
+            compute_binary(binVertice, binNormals, binIds), dtype=np.uint8)
 
         return glTF
 
@@ -325,110 +308,3 @@ def compute_header(binVertices, binNormals, binIds,
         header["extensionsUsed"] = extensions
 
     return header
-
-
-def trianglesToArrays(triangles, normals):
-    vertice = []
-    normalArray = []
-    for i in range(0, len(triangles)):
-        n = normals[i]
-        for vertex in triangles[i]:
-            vertice.append(vertex)
-            normalArray.append(n)
-    return (vertice, normalArray)
-
-
-def triangulate(polygon):
-    """
-    Triangulates 3D polygons
-    """
-    vect1 = polygon[1] - polygon[0]
-    vect2 = polygon[2] - polygon[0]
-    vectProd = np.cross(vect1, vect2)
-    polygon2D = []
-    segments = list(range(len(polygon)))
-    segments.append(0)
-    # triangulation of the polygon projected on planes (xy) (zx) or (yz)
-    if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
-       and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
-        # (yz) projection
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][1], polygon[v][2]])
-    elif(math.fabs(vectProd[1]) > math.fabs(vectProd[2])):
-        # (zx) projection
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][0], polygon[v][2]])
-    else:
-        # (xy) projextion
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][0], polygon[v][1]])
-
-    triangulation = triangle.triangulate({'vertices': polygon2D,
-                                          'segments': segments})
-    if 'triangles' not in triangulation:    # if polygon is degenerate
-        return []
-    trianglesIdx = triangulation['triangles']
-    triangles = []
-
-    for t in trianglesIdx:
-        # triangulation may break triangle orientation, test it before
-        # adding triangles
-        if(t[0] > t[1] > t[2] or t[2] > t[0] > t[1] or t[1] > t[2] > t[0]):
-            triangles.append([polygon[t[1]], polygon[t[0]], polygon[t[2]]])
-        else:
-            triangles.append([polygon[t[0]], polygon[t[1]], polygon[t[2]]])
-
-    return triangles
-
-
-def compute_normals(triangles):
-    normals = []
-    for t in triangles:
-        U = t[1] - t[0]
-        V = t[2] - t[0]
-        N = np.cross(U, V)
-        norm = np.linalg.norm(N)
-        if norm == 0:
-            normals.append(np.array([1, 0, 0], dtype=np.float32))
-        else:
-            normals.append(N / norm)
-    return normals
-
-
-def parse(wkb):
-    """
-    Expects Multipolygon Z
-    """
-    multiPolygon = []
-    # length = len(wkb)
-    # print(length)
-    # byteorder = struct.unpack('b', wkb[0:1])
-    # print(byteorder)
-    # geomtype = struct.unpack('I', wkb[1:5])    # 1006 (Multipolygon Z)
-    # print(geomtype)
-    geomNb = struct.unpack('I', wkb[5:9])[0]
-    # print(geomNb)
-    # print(struct.unpack('b', wkb[9:10])[0])
-    # print(struct.unpack('I', wkb[10:14])[0])   # 1003 (Polygon)
-    # print(struct.unpack('I', wkb[14:18])[0])   # num lines
-    # print(struct.unpack('I', wkb[18:22])[0])   # num points
-    offset = 9
-    for i in range(0, geomNb):
-        offset += 5  # struct.unpack('bI', wkb[offset:offset+5])[0]
-        # 1 (byteorder), 1003 (Polygon)
-        lineNb = struct.unpack('I', wkb[offset:offset+4])[0]
-        offset += 4
-        polygon = []
-        for j in range(0, lineNb):
-            pointNb = struct.unpack('I', wkb[offset:offset+4])[0]  # num points
-            offset += 4
-            line = []
-            for k in range(0, pointNb-1):
-                point = np.array(struct.unpack('ddd', wkb[offset:offset+24]),
-                                 dtype=np.float32)
-                offset += 24
-                line.append(point)
-            offset += 24   # skip redundant point
-            polygon.append(line)
-        multiPolygon.append(polygon)
-    return multiPolygon
