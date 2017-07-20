@@ -126,7 +126,11 @@ def parse(wkb):
     # print(length)
     # byteorder = struct.unpack('b', wkb[0:1])
     # print(byteorder)
-    # geomtype = struct.unpack('I', wkb[1:5])    # 1006 (Multipolygon Z)
+    geomtype = struct.unpack('I', wkb[1:5])[0]
+    hasZ = (geomtype == 1006) or (geomtype == 1015)
+    # MultipolygonZ or polyhedralSurface
+    pntOffset = 24 if hasZ else 16
+    pntUnpack = 'ddd' if hasZ else 'dd'
     # print(geomtype)
     geomNb = struct.unpack('I', wkb[5:9])[0]
     # print(geomNb)
@@ -146,11 +150,11 @@ def parse(wkb):
             offset += 4
             line = []
             for k in range(0, pointNb-1):
-                point = np.array(struct.unpack('ddd', wkb[offset:offset+24]),
-                                 dtype=np.float32)
-                offset += 24
+                point = np.array(struct.unpack(pntUnpack, wkb[offset:offset +
+                                 pntOffset]), dtype=np.float32)
+                offset += pntOffset
                 line.append(point)
-            offset += 24   # skip redundant point
+            offset += pntOffset   # skip redundant point
             polygon.append(line)
         multipolygon.append(polygon)
     return multipolygon
