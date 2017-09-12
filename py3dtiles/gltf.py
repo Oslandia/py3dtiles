@@ -10,23 +10,32 @@ class GlTF(object):
         self.header = {}
         self.body = None
 
-    def to_array(self):  # bgl
+    def to_array(self):  # glb
         scene = json.dumps(self.header, separators=(',', ':'))
 
-        # scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
         # body must be 4-byte aligned
-        scene += ' '*(4 - len(scene) % 4)
+        scene += ' '*((4 - len(scene) % 4) % 4)
 
-        binaryHeader = np.fromstring("glTF", dtype=np.uint8)
-        binaryHeader2 = np.array([1,
-                                  20 + len(self.body) + len(scene),
-                                  len(scene),
-                                  0], dtype=np.uint32)
+        padding = np.array([0 for i in range(0, (4 - len(self.body) % 4) % 4)],
+                           dtype=np.uint8)
 
-        return np.concatenate((binaryHeader,
-                               binaryHeader2.view(np.uint8),
+        length = 28 + len(self.body) + len(scene) + len(padding)
+        binaryHeader = np.array([0x46546C67,  # "glTF" magic
+                                 2,  # version
+                                 length], dtype=np.uint32)
+        jsonChunkHeader = np.array([len(scene),  # JSON chunck length
+                                    0x4E4F534A], dtype=np.uint32)  # "JSON"
+
+        binChunkHeader = np.array([len(self.body) + len(padding),
+                                   # BIN chunck length
+                                   0x004E4942], dtype=np.uint32)  # "BIN"
+
+        return np.concatenate((binaryHeader.view(np.uint8),
+                               jsonChunkHeader.view(np.uint8),
                                np.fromstring(scene, dtype=np.uint8),
-                               self.body))
+                               binChunkHeader.view(np.uint8),
+                               self.body,
+                               padding))
 
     @staticmethod
     def from_array(array):
@@ -97,7 +106,7 @@ class GlTF(object):
             nVertice.append(n)
             bb.append(geometry['bbox'])
             if batched:
-                binIds.append(np.full(n, i, dtype=np.uint16))
+                binIds.append(np.full(n, i, dtype=np.uint32))
 
         glTF.header = compute_header(binVertice, binNormals, binIds,
                                      nVertice, bb, transform,
@@ -124,45 +133,43 @@ def compute_header(binVertices, binNormals, binIds,
     for i in range(0, meshNb):
         sizeVce.append(len(binVertices[i]))
 
-    buffers = {
-        'binary_glTF': {
-            'byteLength': 13/6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
-            'type': "arraybuffer"
-        }
-    }
+    buffers = [{
+        'byteLength': int(round(7/3 * sum(sizeVce) if batched
+                          else 2 * sum(sizeVce)))
+    }]
     if uri is not None:
         buffers["binary_glTF"]["uri"] = uri
 
     # Buffer view
-    bufferViews = {
-        'BV_vertices': {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeVce),
-            'byteOffset': 0,
-            'target': 34962
-        },
-        'BV_normals': {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeVce),
-            'byteOffset': sum(sizeVce),
-            'target': 34962
-        }
-    }
+    bufferViews = []
+    # vertices
+    bufferViews.append({
+        'buffer': 0,
+        'byteLength': sum(sizeVce),
+        'byteOffset': 0,
+        'target': 34962
+    })
+    bufferViews.append({
+        'buffer': 0,
+        'byteLength': sum(sizeVce),
+        'byteOffset': sum(sizeVce),
+        'target': 34962
+    })
     if batched:
-        bufferViews['BV_ids'] = {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeVce) / 6,
+        bufferViews.append({
+            'buffer': 0,
+            'byteLength': int(round(sum(sizeVce) / 3)),
             'byteOffset': 2 * sum(sizeVce),
             'target': 34962
-        }
+        })
 
     # Accessor
-    accessors = {}
+    accessors = []
     if batched:
-        accessors["AV"] = {
-            'bufferView': "BV_vertices",
+        # Vertices
+        accessors.append({
+            'bufferView': 0,
             'byteOffset': 0,
-            'byteStride': 12,
             'componentType': 5126,
             'count': sum(nVertices),
             'max': [max([bb[i][0][1] for i in range(0, meshNb)]),
@@ -172,139 +179,104 @@ def compute_header(binVertices, binNormals, binIds,
                     min([bb[i][1][2] for i in range(0, meshNb)]),
                     min([bb[i][1][0] for i in range(0, meshNb)])],
             'type': "VEC3"
-        }
-        accessors["AN"] = {
-            'bufferView': "BV_normals",
+        })
+        # normals
+        accessors.append({
+            'bufferView': 1,
             'byteOffset': 0,
-            'byteStride': 12,
             'componentType': 5126,
             'count': sum(nVertices),
             'max': [1, 1, 1],
             'min': [-1, -1, -1],
             'type': "VEC3"
-        }
-        accessors["AD"] = {
-            'bufferView': "BV_ids",
+        })
+        # ids
+        accessors.append({
+            'bufferView': 2,
             'byteOffset': 0,
-            'byteStride': 2,
-            'componentType': 5123,
+            'componentType': 5126,
             'count': sum(nVertices),
+            'max': [meshNb],
+            'min': [0],
             'type': "SCALAR"
-        }
+        })
     else:
         for i in range(0, meshNb):
-            accessors["AV_" + str(i)] = {
-                'bufferView': "BV_vertices",
+            # vertices
+            accessors.append({
+                'bufferView': 0,
                 'byteOffset': sum(sizeVce[0:i]),
-                'byteStride': 12,
                 'componentType': 5126,
                 'count': nVertices[i],
                 'max': [bb[i][0][1], bb[i][0][2], bb[i][0][0]],
                 'min': [bb[i][1][1], bb[i][1][2], bb[i][1][0]],
                 'type': "VEC3"
-            }
-            accessors["AN_" + str(i)] = {
-                'bufferView': "BV_normals",
+            })
+            # normals
+            accessors.append({
+                'bufferView': 1,
                 'byteOffset': sum(sizeVce[0:i]),
-                'byteStride': 12,
                 'componentType': 5126,
                 'count': nVertices[i],
                 'max': [1, 1, 1],
                 'min': [-1, -1, -1],
                 'type': "VEC3"
-            }
+            })
 
     # Meshes
-    meshes = {}
+    meshes = []
     if batched:
-        meshes["M"] = {
+        meshes.append({
             'primitives': [{
                 'attributes': {
-                    "POSITION": "AV",
-                    "NORMAL": "AN",
-                    "BATCHID": "AD"
+                    "POSITION": 0,
+                    "NORMAL": 1,
+                    "_BATCHID": 2
                 },
-                "material": "defaultMaterial",
                 "mode": 4
             }]
-        }
+        })
     else:
         for i in range(0, meshNb):
-            meshes["M" + str(i)] = {
+            meshes.append({
                 'primitives': [{
                     'attributes': {
-                        "POSITION": "AV_" + str(i),
-                        "NORMAL": "AN_" + str(i)
+                        "POSITION": 2 * i,
+                        "NORMAL": 2 * i + 1
                     },
-                    "indices": "AI_" + str(i),
-                    "material": "defaultMaterial",
                     "mode": 4
                 }]
-            }
+            })
 
     # Nodes
     if batched:
-        nodes = {
-            'node': {
+        nodes = [{
                 'matrix': [float(e) for e in transform],
-                'meshes': ["M"]
-            }
-        }
+                'mesh': 0
+            }]
     else:
-        nodes = {
-            'node': {
+        nodes = []
+        for i in range(0, meshNb):
+            nodes.append({
                 'matrix': [float(e) for e in transform],
-                'meshes': ["M" + str(i) for i in range(0, meshNb)]
-            }
-        }
-    # TODO: one node per feature would probably be better
-
-    # Extensions
-    extensions = []
-    if bgltf:
-        extensions.append("KHR_binary_glTF")
+                'mesh': i
+            })
 
     # Final glTF
     header = {
-        'scene': "defaultScene",
-        'scenes': {
-            'defaultScene': {
-                'nodes': [
-                    "node"
-                ]
-            }
+        'asset': {
+            "generator": "py3dtiles",
+            "version": "2.0"
         },
+        'scene': 0,
+        'scenes': [{
+            'nodes': [i for i in range(0, len(nodes))]
+        }],
         'nodes': nodes,
         'meshes': meshes,
         'accessors': accessors,
         'bufferViews': bufferViews,
-        'buffers': buffers,
-        'materials': {
-            'defaultMaterial': {
-                'name': "None"
-            }
-        }
+        'buffers': buffers
     }
-
-    # Technique for batched glTF
-    """if batched:
-        header['materials']['defaultMaterial']['technique'] = "T0"
-        header['techniques'] = {
-            "T0": {
-                "attributes": {
-                    "a_batchId": "batchId"
-                },
-                "parameters": {
-                    "batchId": {
-                        "semantic": "_BATCHID",
-                        "type": 5123
-                    }
-                }
-            }
-        }
-    """
-
-    if len(extensions) != 0:
-        header["extensionsUsed"] = extensions
 
     return header
