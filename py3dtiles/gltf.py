@@ -72,7 +72,7 @@ class GlTF(object):
 
     @staticmethod
     def from_binary_arrays(arrays, transform, binary=True, batched=True,
-                           uri=None):
+                           uri=None, textureUri=None):
         """
         Parameters
         ----------
@@ -94,9 +94,11 @@ class GlTF(object):
 
         glTF = GlTF()
 
+        textured = 'uv' in arrays[0]
         binVertices = []
         binNormals = []
         binIds = []
+        binUvs = []
         nVertices = []
         bb = []
         for i, geometry in enumerate(arrays):
@@ -107,41 +109,49 @@ class GlTF(object):
             bb.append(geometry['bbox'])
             if batched:
                 binIds.append(np.full(n, i, dtype=np.uint32))
+            if textured:
+                binUvs.append(geometry['uv'])
 
         if batched:
             binVertices = [b''.join(binVertices)]
             binNormals = [b''.join(binNormals)]
+            binUvs = [b''.join(binUvs)]
             binIds = [b''.join(binIds)]
             nVertices = [sum(nVertices)]
 
-        glTF.header = compute_header(binVertices, binNormals, binIds,
+        glTF.header = compute_header(binVertices, binNormals, binIds, binUvs,
                                      nVertices, bb, transform,
-                                     binary, batched, uri)
-        glTF.body = np.frombuffer(
-            compute_binary(binVertices, binNormals, binIds), dtype=np.uint8)
+                                     textured, batched, uri, textureUri)
+        glTF.body = np.frombuffer(compute_binary(binVertices, binNormals,
+                                  binIds, binUvs), dtype=np.uint8)
 
         return glTF
 
 
-def compute_binary(binVertices, binNormals, binIds):
+def compute_binary(binVertices, binNormals, binIds, binUvs):
     bv = b''.join(binVertices)
     bn = b''.join(binNormals)
     bid = b''.join(binIds)
-    return bv + bn + bid
+    buv = b''.join(binUvs)
+    return bv + bn + buv + bid
 
 
-def compute_header(binVertices, binNormals, binIds,
+def compute_header(binVertices, binNormals, binIds, binUvs,
                    nVertices, bb, transform,
-                   bgltf, batched, uri):
+                   textured, batched, uri, textureUri):
     # Buffer
     meshNb = len(binVertices)
     sizeVce = []
     for i in range(0, meshNb):
         sizeVce.append(len(binVertices[i]))
 
+    byteLength = 2 * sum(sizeVce)
+    if textured:
+        byteLength += int(round(2 * sum(sizeVce) / 3))
+    if batched:
+        byteLength += int(round(sum(sizeVce) / 3))
     buffers = [{
-        'byteLength': int(round(7/3 * sum(sizeVce) if batched
-                          else 2 * sum(sizeVce)))
+        'byteLength': byteLength
     }]
     if uri is not None:
         buffers["binary_glTF"]["uri"] = uri
@@ -161,11 +171,19 @@ def compute_header(binVertices, binNormals, binIds,
         'byteOffset': sum(sizeVce),
         'target': 34962
     })
+    if textured:
+        bufferViews.append({
+            'buffer': 0,
+            'byteLength': int(round(2 * sum(sizeVce) / 3)),
+            'byteOffset': 2 * sum(sizeVce),
+            'target': 34962
+        })
     if batched:
         bufferViews.append({
             'buffer': 0,
             'byteLength': int(round(sum(sizeVce) / 3)),
-            'byteOffset': 2 * sum(sizeVce),
+            'byteOffset': int(round(8 / 9 * sum(sizeVce))) if textured
+            else 2 * sum(sizeVce),
             'target': 34962
         })
 
@@ -192,9 +210,19 @@ def compute_header(binVertices, binNormals, binIds,
             'min': [-1, -1, -1],
             'type': "VEC3"
         })
+        if textured:
+            accessors.append({
+                'bufferView': 2,
+                'byteOffset': int(round(2 / 3 * sum(sizeVce[0:i]))),
+                'componentType': 5126,
+                'count': sum(nVertices),
+                'max': [1, 1],
+                'min': [0, 0],
+                'type': "VEC2"
+            })
     if batched:
         accessors.append({
-            'bufferView': 2,
+            'bufferView': 3 if textured else 2,
             'byteOffset': 0,
             'componentType': 5126,
             'count': nVertices[0],
@@ -205,18 +233,23 @@ def compute_header(binVertices, binNormals, binIds,
 
     # Meshes
     meshes = []
+    nAttributes = 3 if textured else 2
     for i in range(0, meshNb):
         meshes.append({
             'primitives': [{
                 'attributes': {
-                    "POSITION": 2 * i,
-                    "NORMAL": 2 * i + 1
+                    "POSITION": nAttributes * i,
+                    "NORMAL": nAttributes * i + 1
                 },
+                "material": 0,
                 "mode": 4
             }]
         })
+        if textured:
+            meshes[i]['primitives'][0]['attributes']['TEXCOORD_0'] = (
+                nAttributes * i + 2)
     if batched:
-        meshes[0]['primitives'][0]['attributes']['_BATCHID'] = 2
+        meshes[0]['primitives'][0]['attributes']['_BATCHID'] = nAttributes
 
     # Nodes
     nodes = []
@@ -225,6 +258,14 @@ def compute_header(binVertices, binNormals, binIds,
             'matrix': [float(e) for e in transform],
             'mesh': i
         })
+
+    # Materials
+    materials = [{
+        'pbrMetallicRoughness': {
+            'metallicFactor': 0
+        },
+        'name': 'Material',
+    }]
 
     # Final glTF
     header = {
@@ -238,9 +279,29 @@ def compute_header(binVertices, binNormals, binIds,
         }],
         'nodes': nodes,
         'meshes': meshes,
+        'materials': materials,
         'accessors': accessors,
         'bufferViews': bufferViews,
         'buffers': buffers
     }
+
+    # Texture data
+    if textured:
+        header['textures'] = [{
+            'sampler': 0,
+            'source': 0
+        }]
+        header['images'] = [{
+            'uri': textureUri
+        }]
+        header['samplers'] = [{
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }]
+        header['materials'][0]['pbrMetallicRoughness']['baseColorTexture'] = {
+            'index': 0
+        }
 
     return header
