@@ -119,8 +119,7 @@ class GlTF(object):
             binIds = [b''.join(binIds)]
             nVertices = [sum(nVertices)]
 
-        glTF.header = compute_header(binVertices, binNormals, binIds, binUvs,
-                                     nVertices, bb, transform,
+        glTF.header = compute_header(binVertices, nVertices, bb, transform,
                                      textured, batched, uri, textureUri)
         glTF.body = np.frombuffer(compute_binary(binVertices, binNormals,
                                   binIds, binUvs), dtype=np.uint8)
@@ -136,8 +135,7 @@ def compute_binary(binVertices, binNormals, binIds, binUvs):
     return bv + bn + buv + bid
 
 
-def compute_header(binVertices, binNormals, binIds, binUvs,
-                   nVertices, bb, transform,
+def compute_header(binVertices, nVertices, bb, transform,
                    textured, batched, uri, textureUri):
     # Buffer
     meshNb = len(binVertices)

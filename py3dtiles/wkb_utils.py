@@ -14,7 +14,7 @@ class TriangleSoup:
         Parameters
         ----------
         wkb : string
-            Well-Known Binary binary string descirbing a multipolygon
+            Well-Known Binary binary string describing a multipolygon
 
         associatedData : array
             array of multipolygons containing data attached to the wkb
