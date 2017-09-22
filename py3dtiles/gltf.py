@@ -180,7 +180,7 @@ def compute_header(binVertices, nVertices, bb, transform,
         bufferViews.append({
             'buffer': 0,
             'byteLength': int(round(sum(sizeVce) / 3)),
-            'byteOffset': int(round(8 / 9 * sum(sizeVce))) if textured
+            'byteOffset': int(round(8 / 3 * sum(sizeVce))) if textured
             else 2 * sum(sizeVce),
             'target': 34962
         })
