@@ -91,7 +91,7 @@ class GlTF(object):
             triangles = []
             for poly in mp:
                 if(len(poly) != 1):
-                    print("No support for inner polygon rings")
+                    triangles.extend(triangulate(poly[0]), [poly[1:]])
                 else:
                     if(len(poly[0]) > 3):
                         triangles.extend(triangulate(poly[0]))
@@ -338,7 +338,7 @@ def trianglesToArrays(triangles, normals):
     return (vertice, normalArray)
 
 
-def triangulate(polygon):
+def triangulate(polygon, holes = []):
     """
     Triangulates 3D polygons
     """
@@ -346,25 +346,44 @@ def triangulate(polygon):
     vect2 = polygon[2] - polygon[0]
     vectProd = np.cross(vect1, vect2)
     polygon2D = []
-    segments = list(range(len(polygon)))
-    segments.append(0)
+    segments = []
+    segment = list(range(len(polygon)))
+    segment.append(0)
+    segments.append(segment)
+    idx = len(polygon)
+    for hole on holes:
+        segments = [idx + i for i in range(len(hole))]
+        segments[-1].append(idx)
+        idx += len(hole)
     # triangulation of the polygon projected on planes (xy) (zx) or (yz)
     if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
        and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
         # (yz) projection
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][1], polygon[v][2]])
+        x = 1
+        y = 2
     elif(math.fabs(vectProd[1]) > math.fabs(vectProd[2])):
         # (zx) projection
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][0], polygon[v][2]])
+        x = 0
+        y = 2
     else:
         # (xy) projextion
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][0], polygon[v][1]])
+        x = 0
+        y = 1
+    for v in range(0, len(polygon)):
+        polygon2D.append([polygon[v][x], polygon[v][y]])
+    for hole in holes:
+        for v in range(0, len(hole)):
+            polygon2D.append(hole[v][x], hole[v][y])
 
-    triangulation = triangle.triangulate({'vertices': polygon2D,
-                                          'segments': segments})
+    args = {'vertices': polygon2D,
+            'segments': segments}
+    if len(holes) != 0:
+        holePoints = []
+        for hole in holes:
+            holePoints.append([(hole[0][x] + hole[1][x] + hole[2][x]) / 3,
+                    (hole[0][y] + hole[1][y] + hole[2][y]) / 3])
+        args['holes'] = holePoints
+    triangulation = triangle.triangulate(args)
     if 'triangles' not in triangulation:    # if polygon is degenerate
         return []
     trianglesIdx = triangulation['triangles']
