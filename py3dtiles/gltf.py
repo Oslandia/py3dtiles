@@ -351,8 +351,10 @@ def triangulate(poly):
     for i in range(len(polygon)):
         segments.append([i, (i+1)%len(polygon)])
     idx = len(polygon)
-    for i in range(len(holes)):
-        segments.append([i + idx, (i+1)%len(holes) + idx])
+    for hole in holes:
+      for i in range(len(hole)):
+        segments.append([i + idx, (i+1)%len(hole) + idx])
+      idx += len(hole)
     # triangulation of the polygon projected on planes (xy) (zx) or (yz)
     if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
        and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
