@@ -90,13 +90,7 @@ class GlTF(object):
             mp = parse(bytes(wkb))
             triangles = []
             for poly in mp:
-                if(len(poly) != 1):
-                    triangles.extend(triangulate(poly[0]), [poly[1:]])
-                else:
-                    if(len(poly[0]) > 3):
-                        triangles.extend(triangulate(poly[0]))
-                    else:
-                        triangles.append(poly[0])
+                triangles.extend(triangulate(poly))
             nodes.append(triangles)
             normals.append(compute_normals(triangles))
 
@@ -338,23 +332,27 @@ def trianglesToArrays(triangles, normals):
     return (vertice, normalArray)
 
 
-def triangulate(polygon, holes = []):
+def triangulate(poly):
     """
     Triangulates 3D polygons
     """
+    polygon = poly[0]
+    holes = poly[1:]
+
+    allVertices = polygon[:]
+    for elem in holes:
+      allVertices.extend(elem)
+
     vect1 = polygon[1] - polygon[0]
     vect2 = polygon[2] - polygon[0]
     vectProd = np.cross(vect1, vect2)
     polygon2D = []
     segments = []
-    segment = list(range(len(polygon)))
-    segment.append(0)
-    segments.append(segment)
+    for i in range(len(polygon)):
+        segments.append([i, (i+1)%len(polygon)])
     idx = len(polygon)
-    for hole on holes:
-        segments = [idx + i for i in range(len(hole))]
-        segments[-1].append(idx)
-        idx += len(hole)
+    for i in range(len(holes)):
+        segments.append([i + idx, (i+1)%len(holes) + idx])
     # triangulation of the polygon projected on planes (xy) (zx) or (yz)
     if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
        and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
@@ -373,7 +371,7 @@ def triangulate(polygon, holes = []):
         polygon2D.append([polygon[v][x], polygon[v][y]])
     for hole in holes:
         for v in range(0, len(hole)):
-            polygon2D.append(hole[v][x], hole[v][y])
+            polygon2D.append([hole[v][x], hole[v][y]])
 
     args = {'vertices': polygon2D,
             'segments': segments}
@@ -383,19 +381,25 @@ def triangulate(polygon, holes = []):
             holePoints.append([(hole[0][x] + hole[1][x] + hole[2][x]) / 3,
                     (hole[0][y] + hole[1][y] + hole[2][y]) / 3])
         args['holes'] = holePoints
-    triangulation = triangle.triangulate(args)
+
+    triangulation = triangle.triangulate(args, 'pS0')
     if 'triangles' not in triangulation:    # if polygon is degenerate
         return []
     trianglesIdx = triangulation['triangles']
     triangles = []
 
+    print('segments', len(segments))
+    print('allVertices', len(allVertices))
+    print('polygon', len(polygon))
+    print('holes', len(holes))
+
     for t in trianglesIdx:
         # triangulation may break triangle orientation, test it before
         # adding triangles
         if(t[0] > t[1] > t[2] or t[2] > t[0] > t[1] or t[1] > t[2] > t[0]):
-            triangles.append([polygon[t[1]], polygon[t[0]], polygon[t[2]]])
+            triangles.append([allVertices[t[1]], allVertices[t[0]], allVertices[t[2]]])
         else:
-            triangles.append([polygon[t[0]], polygon[t[1]], polygon[t[2]]])
+            triangles.append([allVertices[t[0]], allVertices[t[1]], allVertices[t[2]]])
 
     return triangles
 
