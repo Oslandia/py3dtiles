@@ -4,6 +4,7 @@ import math
 import triangle
 import numpy as np
 import json
+from shapely.geometry import Point, Polygon
 
 
 class GlTF(object):
@@ -380,8 +381,21 @@ def triangulate(poly):
     if len(holes) != 0:
         holePoints = []
         for hole in holes:
-            holePoints.append([(hole[0][x] + hole[1][x] + hole[2][x]) / 3,
-                    (hole[0][y] + hole[1][y] + hole[2][y]) / 3])
+            polygon = Polygon([(point[x], point[y]) for point in hole])
+
+            idx = 0
+            # find a point inside the hole
+            while True:
+                if idx > len(hole) - 3:
+                    # as polygon are closed, this shouldn't happen
+                    raise 'Cannot find a point in polygon'
+                holePoint = [(hole[idx][x] + hole[idx+1][x] + hole[idx+2][x]) / 3,
+                    (hole[idx+0][y] + hole[idx+1][y] + hole[idx+2][y]) / 3]
+                if polygon.contains(Point(holePoint[0], holePoint[1])):
+                  break
+                idx+=1
+
+            holePoints.append(holePoint)
         args['holes'] = holePoints
 
     triangulation = triangle.triangulate(args, 'pS0')
@@ -389,11 +403,6 @@ def triangulate(poly):
         return []
     trianglesIdx = triangulation['triangles']
     triangles = []
-
-    print('segments', len(segments))
-    print('allVertices', len(allVertices))
-    print('polygon', len(polygon))
-    print('holes', len(holes))
 
     for t in trianglesIdx:
         # triangulation may break triangle orientation, test it before
