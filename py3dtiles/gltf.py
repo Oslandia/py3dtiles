@@ -2,6 +2,7 @@
 import struct
 import math
 import triangle
+import earcut
 import numpy as np
 import json
 from shapely.geometry import Point, Polygon
@@ -340,10 +341,15 @@ def triangulate(poly):
     polygon = poly[0]
     holes = poly[1:]
 
+    holes_index = []
     allVertices = polygon[:]
     for elem in holes:
+      #print(len(elem))
+      holes_index += [len(allVertices)]
       allVertices.extend(elem)
-
+    #if len(holes_index) > 0:
+        #print(len(allVertices))
+        #print(holes_index)
     vect1 = polygon[1] - polygon[0]
     vect2 = polygon[2] - polygon[0]
     vectProd = np.cross(vect1, vect2)
@@ -356,6 +362,7 @@ def triangulate(poly):
       for i in range(len(hole)):
         segments.append([i + idx, (i+1)%len(hole) + idx])
       idx += len(hole)
+
     # triangulation of the polygon projected on planes (xy) (zx) or (yz)
     if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
        and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
@@ -376,9 +383,9 @@ def triangulate(poly):
         for v in range(0, len(hole)):
             polygon2D.append([hole[v][x], hole[v][y]])
 
-    args = {'vertices': polygon2D,
-            'segments': segments}
-    if len(holes) != 0:
+    args = {'vertices': polygon2D}
+    #        'segments': segments}
+    if False and len(holes) != 0:
         holePoints = []
         for hole in holes:
             polygon = Polygon([(point[x], point[y]) for point in hole])
@@ -398,19 +405,40 @@ def triangulate(poly):
             holePoints.append(holePoint)
         args['holes'] = holePoints
 
-    triangulation = triangle.triangulate(args, 'pS0')
-    if 'triangles' not in triangulation:    # if polygon is degenerate
-        return []
-    trianglesIdx = triangulation['triangles']
-    triangles = []
+    ear = True
 
-    for t in trianglesIdx:
+    if ear:
+        vertices = [coord for vert in args['vertices'] for coord in vert]
+        hole_base = len(args['vertices'])
+        holes = []
+        #if 'holes' in args:
+        #    vertices += [coord for vert in args['holes'] for coord in vert]
+        #    hole_count = len(args['holes'])
+        #    holes = [hole_base + i for i in range(hole_count)]
+        #    holes = []
+
+        #print(vertices)
+        #print(holes)
+        trianglesIdx = earcut.earcut(vertices, holes_index, 2)
+        if len(trianglesIdx) == 0:
+            return []
+    else:
+
+        triangulation = triangle.triangulate(args, 'pS0')
+        if 'triangles' not in triangulation:    # if polygon is degenerate
+            return []
+        trianglesIdx = triangulation['triangles']
+    triangles = []
+    t = trianglesIdx
+    #print('{} -> {}'.format(len(trianglesIdx), trianglesIdx))
+    for i in range(0, len(trianglesIdx), 3):
         # triangulation may break triangle orientation, test it before
         # adding triangles
-        if(t[0] > t[1] > t[2] or t[2] > t[0] > t[1] or t[1] > t[2] > t[0]):
-            triangles.append([allVertices[t[1]], allVertices[t[0]], allVertices[t[2]]])
+        #print('{} {} {} ({})'.format(t[i + 0], t[i + 1], t[i + 2], len(allVertices)))
+        if(t[i + 0] > t[i + 1] > t[i + 2] or t[i + 2] > t[i + 0] > t[i + 1] or t[i + 1] > t[i + 2] > t[i + 0]):
+            triangles.append([allVertices[t[i + 1]], allVertices[t[i + 0]], allVertices[t[i + 2]]])
         else:
-            triangles.append([allVertices[t[0]], allVertices[t[1]], allVertices[t[2]]])
+            triangles.append([allVertices[t[i + 0]], allVertices[t[i + 1]], allVertices[t[i + 2]]])
 
     return triangles
 
