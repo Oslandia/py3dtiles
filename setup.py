@@ -10,7 +10,7 @@ requirements = (
     'numpy',
     'pyproj',
     'cython',
-    'triangle'
+    'shapely'
 )
 
 dev_requirements = (

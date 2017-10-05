@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import struct
 import math
-import triangle
-import earcut
+from .earcut import earcut
 import numpy as np
 import json
 from shapely.geometry import Point, Polygon
@@ -66,7 +65,55 @@ class GlTF(object):
         return glTF
 
     @staticmethod
-    def from_wkb(wkbs, bboxes, transform, binary=True, batched=True, uri=None):
+    def from_wkb_as_lines(wkbs, bboxes, transform, binary=True, batched=True, uri=None):
+        """
+        Parameters
+        ----------
+        wkbs : array
+            Array of wkbs
+
+        bboxes : array
+            Array of bounding boxes (numpy.array)
+
+        transform : numpy.array
+            World coordinates transformation flattend matrix
+
+        Returns
+        -------
+        glTF : GlTF
+        """
+
+        glTF = GlTF()
+        nodes = []
+
+        bb = []
+        for wkb, bbox in zip(wkbs, bboxes):
+            mp = parse_to_lines(bytes(wkb))
+
+            nodes.append(mp)
+            bb.append(bbox)
+
+        binVertices = []
+        binIds = []
+        nVertices = []
+        for i in range(0, len(nodes)):
+            verticeArray = nodes[i]
+            packedVertices = b''.join(verticeArray)
+            binVertices.append(packedVertices)
+            nVertices.append(len(verticeArray))
+            if batched:
+                binIds.append(np.full(len(verticeArray), i, dtype=np.uint16))
+
+        glTF.header = compute_header(1, binVertices, [], binIds,
+                                     nVertices, bb, transform,
+                                     binary, batched, uri)
+        glTF.body = np.frombuffer(
+            compute_binary(binVertices, [], binIds), dtype=np.uint8)
+
+        return glTF
+
+    @staticmethod
+    def from_wkb_as_triangles(wkbs, bboxes, transform, binary=True, batched=True, uri=None, include_normals=True):
         """
         Parameters
         ----------
@@ -89,12 +136,13 @@ class GlTF(object):
         normals = []
         bb = []
         for wkb, bbox in zip(wkbs, bboxes):
-            mp = parse(bytes(wkb))
+            mp = parse_to_triangles(bytes(wkb))
             triangles = []
             for poly in mp:
                 triangles.extend(triangulate(poly))
             nodes.append(triangles)
-            normals.append(compute_normals(triangles))
+            if include_normals:
+                normals.append(compute_normals(triangles))
 
             bb.append(bbox)
 
@@ -103,16 +151,18 @@ class GlTF(object):
         binIds = []
         nVertices = []
         for i in range(0, len(nodes)):
-            (verticeArray, normalArray) = trianglesToArrays(nodes[i],
-                                                            normals[i])
+            (verticeArray, normalArray) = trianglesToArrays(
+                nodes[i],
+                normals[i] if include_normals else None)
             packedVertices = b''.join(verticeArray)
             binVertices.append(packedVertices)
-            binNormals.append(b''.join(normalArray))
+            if include_normals:
+                binNormals.append(b''.join(normalArray))
             nVertices.append(len(verticeArray))
             if batched:
                 binIds.append(np.full(len(verticeArray), i, dtype=np.uint16))
 
-        glTF.header = compute_header(binVertices, binNormals, binIds,
+        glTF.header = compute_header(4, binVertices, binNormals, binIds,
                                      nVertices, bb, transform,
                                      binary, batched, uri)
         glTF.body = np.frombuffer(
@@ -128,7 +178,7 @@ def compute_binary(binVertices, binNormals, binIds):
     return bv + bn + bid
 
 
-def compute_header(binVertices, binNormals, binIds,
+def compute_header(mode, binVertices, binNormals, binIds,
                    nVertices, bb, transform,
                    bgltf, batched, uri):
     # Buffer
@@ -137,9 +187,11 @@ def compute_header(binVertices, binNormals, binIds,
     for i in range(0, meshNb):
         sizeVce.append(len(binVertices[i]))
 
+    has_normals = len(binNormals) > 0
+
     buffers = {
         'binary_glTF': {
-            'byteLength': 13/6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
+            'byteLength': (6 + 6 * int(has_normals) + 1)/6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
             'type': "arraybuffer"
         }
     }
@@ -154,18 +206,23 @@ def compute_header(binVertices, binNormals, binIds,
             'byteOffset': 0,
             'target': 34962
         },
-        'BV_normals': {
+    }
+    byteOffset = bufferViews['BV_vertices']['byteLength']
+
+    if has_normals:
+        bufferViews['BV_normals'] = {
             'buffer': "binary_glTF",
             'byteLength': sum(sizeVce),
-            'byteOffset': sum(sizeVce),
+            'byteOffset': byteOffset,
             'target': 34962
         }
-    }
+        byteOffset += bufferViews['BV_normals']['byteLength']
+
     if batched:
         bufferViews['BV_ids'] = {
             'buffer': "binary_glTF",
             'byteLength': sum(sizeVce) / 6,
-            'byteOffset': 2 * sum(sizeVce),
+            'byteOffset': byteOffset,
             'target': 34962
         }
 
@@ -186,16 +243,17 @@ def compute_header(binVertices, binNormals, binIds,
                     min([bb[i][1][0] for i in range(0, meshNb)])],
             'type': "VEC3"
         }
-        accessors["AN"] = {
-            'bufferView': "BV_normals",
-            'byteOffset': 0,
-            'byteStride': 12,
-            'componentType': 5126,
-            'count': sum(nVertices),
-            'max': [1, 1, 1],
-            'min': [-1, -1, -1],
-            'type': "VEC3"
-        }
+        if has_normals:
+            accessors["AN"] = {
+                'bufferView': "BV_normals",
+                'byteOffset': 0,
+                'byteStride': 12,
+                'componentType': 5126,
+                'count': sum(nVertices),
+                'max': [1, 1, 1],
+                'min': [-1, -1, -1],
+                'type': "VEC3"
+            }
         accessors["AD"] = {
             'bufferView': "BV_ids",
             'byteOffset': 0,
@@ -216,16 +274,17 @@ def compute_header(binVertices, binNormals, binIds,
                 'min': [bb[i][1][1], bb[i][1][2], bb[i][1][0]],
                 'type': "VEC3"
             }
-            accessors["AN_" + str(i)] = {
-                'bufferView': "BV_normals",
-                'byteOffset': sum(sizeVce[0:i]),
-                'byteStride': 12,
-                'componentType': 5126,
-                'count': nVertices[i],
-                'max': [1, 1, 1],
-                'min': [-1, -1, -1],
-                'type': "VEC3"
-            }
+            if has_normals:
+                accessors["AN_" + str(i)] = {
+                    'bufferView': "BV_normals",
+                    'byteOffset': sum(sizeVce[0:i]),
+                    'byteStride': 12,
+                    'componentType': 5126,
+                    'count': nVertices[i],
+                    'max': [1, 1, 1],
+                    'min': [-1, -1, -1],
+                    'type': "VEC3"
+                }
 
     # Meshes
     meshes = {}
@@ -234,13 +293,15 @@ def compute_header(binVertices, binNormals, binIds,
             'primitives': [{
                 'attributes': {
                     "POSITION": "AV",
-                    "NORMAL": "AN",
                     "BATCHID": "AD"
                 },
                 "material": "defaultMaterial",
-                "mode": 4
+                "mode": mode
             }]
         }
+
+        if has_normals:
+            meshes['M']['primitives'][0]['attributes']['NORMAL'] = 'AN'
     else:
         for i in range(0, meshNb):
             meshes["M" + str(i)] = {
@@ -251,9 +312,12 @@ def compute_header(binVertices, binNormals, binIds,
                     },
                     "indices": "AI_" + str(i),
                     "material": "defaultMaterial",
-                    "mode": 4
+                    "mode": mode
                 }]
             }
+
+            if has_normals:
+                meshes['M' + str(i)]['primitives']['attributes']['NORMAL'] = 'AN' + str(i)
 
     # Nodes
     if batched:
@@ -419,15 +483,15 @@ def triangulate(poly):
 
         #print(vertices)
         #print(holes)
-        trianglesIdx = earcut.earcut(vertices, holes_index, 2)
+        trianglesIdx = earcut(vertices, holes_index, 2)
         if len(trianglesIdx) == 0:
             return []
     else:
-
-        triangulation = triangle.triangulate(args, 'pS0')
-        if 'triangles' not in triangulation:    # if polygon is degenerate
-            return []
-        trianglesIdx = triangulation['triangles']
+        pass
+        # triangulation = triangle.triangulate(args, 'pS0')
+        # if 'triangles' not in triangulation:    # if polygon is degenerate
+        #     return []
+        #trianglesIdx = triangulation['triangles']
     triangles = []
     t = trianglesIdx
     #print('{} -> {}'.format(len(trianglesIdx), trianglesIdx))
@@ -456,8 +520,64 @@ def compute_normals(triangles):
             normals.append(N / norm)
     return normals
 
+def parse_to_lines(wkb):
+    """
+    Expects Multipolygon Z
+    """
+    multiPolygon = []
+    # length = len(wkb)
+    # print(length)
+    # byteorder = struct.unpack('b', wkb[0:1])
+    # print(byteorder)
+    # geomtype = struct.unpack('I', wkb[1:5])    # 1006 (Multipolygon Z)
+    # print(geomtype)
+    typ = struct.unpack('I', wkb[1:5])[0]
 
-def parse(wkb):
+    if typ != 1005 and typ != 1006:
+        print('Unsupported geom type:' + str(typ))
+        return None
+
+    geomNb = struct.unpack('I', wkb[5:9])[0]
+    # print(geomNb)
+    # print(struct.unpack('b', wkb[9:10])[0])
+    # print(struct.unpack('I', wkb[10:14])[0])   # 1003 (Polygon)
+    # print(struct.unpack('I', wkb[14:18])[0])   # num lines
+    # print(struct.unpack('I', wkb[18:22])[0])   # num points
+    offset = 9
+    line_segments = []
+    for i in range(0, geomNb):
+        offset += 5  # struct.unpack('bI', wkb[offset:offset+5])[0]
+        # 1 (byteorder), 1003 (Polygon)
+
+        if typ == 1006: # multipolygon Z
+            lineNb = struct.unpack('I', wkb[offset:offset+4])[0]
+            offset += 4
+        elif typ == 1005: # multiline Z
+            lineNb = 1
+        else:
+            print(wkb[1:5])
+            print('foo ' + str(typ))
+            raise 'rr'
+        for j in range(0, lineNb):
+            pointNb = struct.unpack('I', wkb[offset:offset+4])[0]  # num points
+            offset += 4
+            line = []
+            previous_point = None
+            # print(pointNb)
+            for k in range(0, pointNb):
+                point = np.array(struct.unpack('ddd', wkb[offset:offset+24]),
+                                 dtype=np.float32)
+                offset += 24
+                # todo: for polygon we should draw using closed lines
+                if k >= 2:
+                    line_segments.append(previous_point)
+                line_segments.append(point)
+                previous_point = point
+
+    return line_segments
+
+
+def parse_to_triangles(wkb):
     """
     Expects Multipolygon Z
     """
