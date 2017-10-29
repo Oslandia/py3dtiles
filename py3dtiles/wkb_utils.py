@@ -107,6 +107,19 @@ class TriangleSoup:
         verticeArray = faceAttributeToArray(normals)
         return b''.join(verticeArray)
 
+    def getBbox(self):
+        """
+        Parameters
+        ----------
+
+        Returns
+        -------
+        Array [[minX, minY, minZ],[maxX, maxY, maxZ]]
+        """
+        mins = np.array([np.min(t, 0) for t in self.triangles[0]])
+        maxs = np.array([np.max(t, 0) for t in self.triangles[0]])
+        return [np.min(mins, 0), np.max(maxs, 0)]
+
 
 def faceAttributeToArray(triangles):
     array = []

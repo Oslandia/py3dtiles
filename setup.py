@@ -10,7 +10,8 @@ requirements = (
     'numpy',
     'pyproj',
     'cython',
-    'triangle'
+    'triangle',
+    'psycopg2'
 )
 
 dev_requirements = (
@@ -62,7 +63,7 @@ setup(
     packages=find_packages(),
     install_requires=requirements,
     test_suite="tests",
-    scripts=["tools/py3dtiles_info"],
+    scripts=["tools/py3dtiles_info", "tools/export_tileset"],
     extras_require={
         'dev': dev_requirements,
         'prod': prod_requirements,
