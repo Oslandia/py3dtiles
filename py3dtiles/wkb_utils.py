@@ -1,7 +1,7 @@
 import numpy as np
 import math
 import struct
-import triangle
+from .earcut import earcut
 
 
 class TriangleSoup:
@@ -33,7 +33,10 @@ class TriangleSoup:
         for i in range(0, len(multipolygons[0])):
             polygon = multipolygons[0][i]
             additionalPolygons = [mp[i] for mp in multipolygons[1:]]
-            if(len(polygon) != 1):
+            triangles = triangulate(polygon, additionalPolygons)
+            for array, tri in zip(trianglesArray, triangles):
+                array += tri
+            """if(len(polygon) != 1):
                 print("No support for inner polygon rings")
             else:
                 if(len(polygon[0]) > 3):
@@ -44,7 +47,7 @@ class TriangleSoup:
                 else:
                     for array, tri in zip(trianglesArray,
                                           [polygon] + additionalPolygons):
-                        array += tri
+                        array += tri"""
 
         ts = TriangleSoup()
         ts.triangles = trianglesArray
@@ -103,6 +106,19 @@ class TriangleSoup:
 
         verticeArray = faceAttributeToArray(normals)
         return b''.join(verticeArray)
+
+    def getBbox(self):
+        """
+        Parameters
+        ----------
+
+        Returns
+        -------
+        Array [[minX, minY, minZ],[maxX, maxY, maxZ]]
+        """
+        mins = np.array([np.min(t, 0) for t in self.triangles[0]])
+        maxs = np.array([np.max(t, 0) for t in self.triangles[0]])
+        return [np.min(mins, 0), np.max(maxs, 0)]
 
 
 def faceAttributeToArray(triangles):
@@ -164,42 +180,64 @@ def triangulate(polygon, additionalPolygons=[]):
     """
     Triangulates 3D polygons
     """
-    vect1 = polygon[1] - polygon[0]
-    vect2 = polygon[2] - polygon[0]
+    vect1 = polygon[0][1] - polygon[0][0]
+    vect2 = polygon[0][2] - polygon[0][0]
     vectProd = np.cross(vect1, vect2)
     polygon2D = []
-    segments = list(range(len(polygon)))
-    segments.append(0)
+    holes = []
+    delta = 0
+    for p in polygon[:-1]:
+        holes.append(delta + len(p))
+        delta += len(p)
     # triangulation of the polygon projected on planes (xy) (zx) or (yz)
     if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
        and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
         # (yz) projection
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][1], polygon[v][2]])
+        for linestring in polygon:
+            for point in linestring:
+                polygon2D.extend([point[1], point[2]])
     elif(math.fabs(vectProd[1]) > math.fabs(vectProd[2])):
         # (zx) projection
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][0], polygon[v][2]])
+        for linestring in polygon:
+            for point in linestring:
+                polygon2D.extend([point[0], point[2]])
     else:
         # (xy) projextion
-        for v in range(0, len(polygon)):
-            polygon2D.append([polygon[v][0], polygon[v][1]])
+        for linestring in polygon:
+            for point in linestring:
+                polygon2D.extend([point[0], point[1]])
 
-    triangulation = triangle.triangulate({'vertices': polygon2D,
-                                          'segments': segments})
-    if 'triangles' not in triangulation:    # if polygon is degenerate
-        return []
-    trianglesIdx = triangulation['triangles']
+    trianglesIdx = earcut(polygon2D, holes, 2)
 
     arrays = [[] for _ in range(len(additionalPolygons) + 1)]
-    for t in trianglesIdx:
+    for i in range(0, len(trianglesIdx), 3):
+        t = trianglesIdx[i:i+3]
+        p0 = unflatten(polygon, holes, t[0])
+        p1 = unflatten(polygon, holes, t[1])
+        p2 = unflatten(polygon, holes, t[2])
         # triangulation may break triangle orientation, test it before
         # adding triangles
-        if(t[0] > t[1] > t[2] or t[2] > t[0] > t[1] or t[1] > t[2] > t[0]):
-            for array, p in zip(arrays, [polygon] + additionalPolygons):
-                array.append([p[t[1]], p[t[0]], p[t[2]]])
+        crossProduct = np.cross(p1 - p0, p2 - p0)
+        invert = np.dot(vectProd, crossProduct) < 0
+        if invert:
+            arrays[0].append([p1, p0, p2])
         else:
-            for array, p in zip(arrays, [polygon] + additionalPolygons):
-                array.append([p[t[0]], p[t[1]], p[t[2]]])
+            arrays[0].append([p0, p1, p2])
+        for array, p in zip(arrays[1:],  additionalPolygons):
+            pp0 = unflatten(p, holes, t[0])
+            pp1 = unflatten(p, holes, t[1])
+            pp2 = unflatten(p, holes, t[2])
+            if invert:
+                array.append([pp1, pp0, pp2])
+            else:
+                array.append([pp0, pp1, pp2])
 
     return arrays
+
+
+def unflatten(array, lengths, index):
+    for i in reversed(range(0, len(lengths))):
+        lgth = lengths[i]
+        if index >= lgth:
+            return array[i + 1][index - lgth]
+    return array[0][index]
