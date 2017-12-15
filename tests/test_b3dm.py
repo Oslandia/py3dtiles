@@ -6,7 +6,7 @@ import binascii
 import json
 # np.set_printoptions(formatter={'int':hex})
 
-from py3dtiles import TileReader, Tile, Feature, B3dm, GlTF
+from py3dtiles import TileReader, Tile, Feature, B3dm, GlTF, TriangleSoup
 
 
 class TestTileReader(unittest.TestCase):
@@ -31,9 +31,17 @@ class TestTileBuilder(unittest.TestCase):
     def test_build(self):
         with open('tests/building.wkb', 'rb') as f:
             wkb = f.read()
-
+        ts = TriangleSoup.from_wkb_multipolygon(wkb)
+        positions = ts.getPositionArray()
+        normals = ts.getNormalArray()
         box = [[-8.74748499994166, -7.35523200035095, -2.05385796777344],
                [8.8036420000717, 7.29930999968201, 2.05386103222656]]
+        arrays = [{
+            'position': positions,
+            'normal': normals,
+            'bbox': box
+        }]
+
         transform = np.array([
             [1, 0, 0, 1842015.125],
             [0, 1, 0, 5177109.25],
@@ -41,7 +49,7 @@ class TestTileBuilder(unittest.TestCase):
             [0, 0, 0, 1]], dtype=float)
         # translation : 1842015.125, 5177109.25, 247.87364196777344
         transform = transform.flatten('F')
-        glTF = GlTF.from_wkb([wkb], [box], transform)
+        glTF = GlTF.from_binary_arrays(arrays, transform)
         t = B3dm.from_glTF(glTF)
 
         # get an array

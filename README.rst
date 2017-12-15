@@ -216,7 +216,7 @@ file containing polyhedralsurfaces or multipolygons.
 .. code-block:: python
 
     >>> import numpy as np
-    >>> from py3dtiles import GlTF
+    >>> from py3dtiles import GlTF, TriangleSoup
     >>>
     >>> # load a wkb file
     >>> wkb = open('tests/building.wkb', 'rb').read()
@@ -230,11 +230,18 @@ file containing polyhedralsurfaces or multipolygons.
     ...             [0, 1, 0, 5177109.25],
     ...             [0, 0, 1, 247.87364196777344],
     ...             [0, 0, 0, 1]], dtype=float)
-    >>> transform.flatten('F')
+    >>> transform = transform.flatten('F')
     >>>
-    >>> # generate the glTF part from the wkb file.
-    >>> # notice that from_wkb accepts array of wkbs and boxes for batching purposes.
-    >>> gltf = GlTF.from_wkb([wkb], [box], transform)
+    >>> # use the TriangleSoup helper class to transform the wkb into arrays
+    >>> # of points and normals
+    >>> ts = TriangleSoup.from_wkb_multipolygon(wkb)
+    >>> positions = ts.getPositionArray()
+    >>> normals = ts.getNormalArray()
+    >>> # generate the glTF part from the binary arrays.
+    >>> # notice that from_binary_arrays accepts array of geometries
+    >>> # for batching purposes.
+    >>> geometry = { 'position': positions, 'normal': normals, 'bbox': box }
+    >>> gltf = GlTF.from_binary_arrays([geometry], transform)
     >>>
     >>> # create a b3dm tile directly from the glTF.
     >>> t = B3dm.from_glTF(glTF)
