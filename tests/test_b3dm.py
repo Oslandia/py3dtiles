@@ -55,7 +55,47 @@ class TestTileBuilder(unittest.TestCase):
         # get an array
         tile_arr = t.to_array()
         self.assertEqual(t.header.version, 1.0)
-        self.assertEqual(t.header.tile_byte_length, 3040)
+        self.assertEqual(t.header.tile_byte_length, 2952)
+        self.assertEqual(t.header.ft_json_byte_length, 0)
+        self.assertEqual(t.header.ft_bin_byte_length, 0)
+        self.assertEqual(t.header.bt_json_byte_length, 0)
+        self.assertEqual(t.header.bt_bin_byte_length, 0)
+
+        # t.save_as("/tmp/py3dtiles_test_build_1.b3dm")
+
+class TestTexturedTileBuilder(unittest.TestCase):
+
+    def test_build(self):
+        with open('tests/square.wkb', 'rb') as f:
+            wkb = f.read()
+        with open('tests/squareUV.wkb', 'rb') as f:
+            wkbuv = f.read()
+        ts = TriangleSoup.from_wkb_multipolygon(wkb, [wkbuv])
+        positions = ts.getPositionArray()
+        normals = ts.getNormalArray()
+        uvs = ts.getDataArray(0)
+        box = [[0, 0, 0],
+               [10, 10, 0]]
+        arrays = [{
+            'position': positions,
+            'normal': normals,
+            'uv': uvs,
+            'bbox': box
+        }]
+
+        transform = np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]], dtype=float)
+        transform = transform.flatten('F')
+        glTF = GlTF.from_binary_arrays(arrays, transform, textureUri='squaretexture.jpg')
+        t = B3dm.from_glTF(glTF)
+
+        # get an array
+        tile_arr = t.to_array()
+        self.assertEqual(t.header.version, 1.0)
+        self.assertEqual(t.header.tile_byte_length, 1556)
         self.assertEqual(t.header.ft_json_byte_length, 0)
         self.assertEqual(t.header.ft_bin_byte_length, 0)
         self.assertEqual(t.header.bt_json_byte_length, 0)

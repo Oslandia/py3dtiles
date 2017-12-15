@@ -10,23 +10,32 @@ class GlTF(object):
         self.header = {}
         self.body = None
 
-    def to_array(self):  # bgl
+    def to_array(self):  # glb
         scene = json.dumps(self.header, separators=(',', ':'))
 
-        # scene = struct.pack(str(len(scene)) + 's', scene.encode('utf8'))
         # body must be 4-byte aligned
-        scene += ' '*(4 - len(scene) % 4)
+        scene += ' '*((4 - len(scene) % 4) % 4)
 
-        binaryHeader = np.fromstring("glTF", dtype=np.uint8)
-        binaryHeader2 = np.array([1,
-                                  20 + len(self.body) + len(scene),
-                                  len(scene),
-                                  0], dtype=np.uint32)
+        padding = np.array([0 for i in range(0, (4 - len(self.body) % 4) % 4)],
+                           dtype=np.uint8)
 
-        return np.concatenate((binaryHeader,
-                               binaryHeader2.view(np.uint8),
+        length = 28 + len(self.body) + len(scene) + len(padding)
+        binaryHeader = np.array([0x46546C67,  # "glTF" magic
+                                 2,  # version
+                                 length], dtype=np.uint32)
+        jsonChunkHeader = np.array([len(scene),  # JSON chunck length
+                                    0x4E4F534A], dtype=np.uint32)  # "JSON"
+
+        binChunkHeader = np.array([len(self.body) + len(padding),
+                                   # BIN chunck length
+                                   0x004E4942], dtype=np.uint32)  # "BIN"
+
+        return np.concatenate((binaryHeader.view(np.uint8),
+                               jsonChunkHeader.view(np.uint8),
                                np.fromstring(scene, dtype=np.uint8),
-                               self.body))
+                               binChunkHeader.view(np.uint8),
+                               self.body,
+                               padding))
 
     @staticmethod
     def from_array(array):
@@ -63,7 +72,7 @@ class GlTF(object):
 
     @staticmethod
     def from_binary_arrays(arrays, transform, binary=True, batched=True,
-                           uri=None):
+                           uri=None, textureUri=None):
         """
         Parameters
         ----------
@@ -85,226 +94,212 @@ class GlTF(object):
 
         glTF = GlTF()
 
-        binVertice = []
+        textured = 'uv' in arrays[0]
+        binVertices = []
         binNormals = []
         binIds = []
-        nVertice = []
+        binUvs = []
+        nVertices = []
         bb = []
         for i, geometry in enumerate(arrays):
-            binVertice.append(geometry['position'])
+            binVertices.append(geometry['position'])
             binNormals.append(geometry['normal'])
             n = round(len(geometry['position']) / 12)
-            nVertice.append(n)
+            nVertices.append(n)
             bb.append(geometry['bbox'])
             if batched:
-                binIds.append(np.full(n, i, dtype=np.uint16))
+                binIds.append(np.full(n, i, dtype=np.uint32))
+            if textured:
+                binUvs.append(geometry['uv'])
 
-        glTF.header = compute_header(binVertice, binNormals, binIds,
-                                     nVertice, bb, transform,
-                                     binary, batched, uri)
-        glTF.body = np.frombuffer(
-            compute_binary(binVertice, binNormals, binIds), dtype=np.uint8)
+        if batched:
+            binVertices = [b''.join(binVertices)]
+            binNormals = [b''.join(binNormals)]
+            binUvs = [b''.join(binUvs)]
+            binIds = [b''.join(binIds)]
+            nVertices = [sum(nVertices)]
+
+        glTF.header = compute_header(binVertices, nVertices, bb, transform,
+                                     textured, batched, uri, textureUri)
+        glTF.body = np.frombuffer(compute_binary(binVertices, binNormals,
+                                  binIds, binUvs), dtype=np.uint8)
 
         return glTF
 
 
-def compute_binary(binVertices, binNormals, binIds):
+def compute_binary(binVertices, binNormals, binIds, binUvs):
     bv = b''.join(binVertices)
     bn = b''.join(binNormals)
     bid = b''.join(binIds)
-    return bv + bn + bid
+    buv = b''.join(binUvs)
+    return bv + bn + buv + bid
 
 
-def compute_header(binVertices, binNormals, binIds,
-                   nVertices, bb, transform,
-                   bgltf, batched, uri):
+def compute_header(binVertices, nVertices, bb, transform,
+                   textured, batched, uri, textureUri):
     # Buffer
     meshNb = len(binVertices)
     sizeVce = []
     for i in range(0, meshNb):
         sizeVce.append(len(binVertices[i]))
 
-    buffers = {
-        'binary_glTF': {
-            'byteLength': 13/6 * sum(sizeVce) if batched else 2 * sum(sizeVce),
-            'type': "arraybuffer"
-        }
-    }
+    byteLength = 2 * sum(sizeVce)
+    if textured:
+        byteLength += int(round(2 * sum(sizeVce) / 3))
+    if batched:
+        byteLength += int(round(sum(sizeVce) / 3))
+    buffers = [{
+        'byteLength': byteLength
+    }]
     if uri is not None:
         buffers["binary_glTF"]["uri"] = uri
 
     # Buffer view
-    bufferViews = {
-        'BV_vertices': {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeVce),
-            'byteOffset': 0,
-            'target': 34962
-        },
-        'BV_normals': {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeVce),
-            'byteOffset': sum(sizeVce),
-            'target': 34962
-        }
-    }
-    if batched:
-        bufferViews['BV_ids'] = {
-            'buffer': "binary_glTF",
-            'byteLength': sum(sizeVce) / 6,
+    bufferViews = []
+    # vertices
+    bufferViews.append({
+        'buffer': 0,
+        'byteLength': sum(sizeVce),
+        'byteOffset': 0,
+        'target': 34962
+    })
+    bufferViews.append({
+        'buffer': 0,
+        'byteLength': sum(sizeVce),
+        'byteOffset': sum(sizeVce),
+        'target': 34962
+    })
+    if textured:
+        bufferViews.append({
+            'buffer': 0,
+            'byteLength': int(round(2 * sum(sizeVce) / 3)),
             'byteOffset': 2 * sum(sizeVce),
             'target': 34962
-        }
+        })
+    if batched:
+        bufferViews.append({
+            'buffer': 0,
+            'byteLength': int(round(sum(sizeVce) / 3)),
+            'byteOffset': int(round(8 / 3 * sum(sizeVce))) if textured
+            else 2 * sum(sizeVce),
+            'target': 34962
+        })
 
     # Accessor
-    accessors = {}
-    if batched:
-        accessors["AV"] = {
-            'bufferView': "BV_vertices",
-            'byteOffset': 0,
-            'byteStride': 12,
+    accessors = []
+    for i in range(0, meshNb):
+        # vertices
+        accessors.append({
+            'bufferView': 0,
+            'byteOffset': sum(sizeVce[0:i]),
             'componentType': 5126,
-            'count': sum(nVertices),
-            'max': [max([bb[i][0][1] for i in range(0, meshNb)]),
-                    max([bb[i][0][2] for i in range(0, meshNb)]),
-                    max([bb[i][0][0] for i in range(0, meshNb)])],
-            'min': [min([bb[i][1][1] for i in range(0, meshNb)]),
-                    min([bb[i][1][2] for i in range(0, meshNb)]),
-                    min([bb[i][1][0] for i in range(0, meshNb)])],
+            'count': nVertices[i],
+            'max': [bb[i][0][1], bb[i][0][2], bb[i][0][0]],
+            'min': [bb[i][1][1], bb[i][1][2], bb[i][1][0]],
             'type': "VEC3"
-        }
-        accessors["AN"] = {
-            'bufferView': "BV_normals",
-            'byteOffset': 0,
-            'byteStride': 12,
+        })
+        # normals
+        accessors.append({
+            'bufferView': 1,
+            'byteOffset': sum(sizeVce[0:i]),
             'componentType': 5126,
-            'count': sum(nVertices),
+            'count': nVertices[i],
             'max': [1, 1, 1],
             'min': [-1, -1, -1],
             'type': "VEC3"
-        }
-        accessors["AD"] = {
-            'bufferView': "BV_ids",
+        })
+        if textured:
+            accessors.append({
+                'bufferView': 2,
+                'byteOffset': int(round(2 / 3 * sum(sizeVce[0:i]))),
+                'componentType': 5126,
+                'count': sum(nVertices),
+                'max': [1, 1],
+                'min': [0, 0],
+                'type': "VEC2"
+            })
+    if batched:
+        accessors.append({
+            'bufferView': 3 if textured else 2,
             'byteOffset': 0,
-            'byteStride': 2,
-            'componentType': 5123,
-            'count': sum(nVertices),
+            'componentType': 5126,
+            'count': nVertices[0],
+            'max': [0],
+            'min': [meshNb],
             'type': "SCALAR"
-        }
-    else:
-        for i in range(0, meshNb):
-            accessors["AV_" + str(i)] = {
-                'bufferView': "BV_vertices",
-                'byteOffset': sum(sizeVce[0:i]),
-                'byteStride': 12,
-                'componentType': 5126,
-                'count': nVertices[i],
-                'max': [bb[i][0][1], bb[i][0][2], bb[i][0][0]],
-                'min': [bb[i][1][1], bb[i][1][2], bb[i][1][0]],
-                'type': "VEC3"
-            }
-            accessors["AN_" + str(i)] = {
-                'bufferView': "BV_normals",
-                'byteOffset': sum(sizeVce[0:i]),
-                'byteStride': 12,
-                'componentType': 5126,
-                'count': nVertices[i],
-                'max': [1, 1, 1],
-                'min': [-1, -1, -1],
-                'type': "VEC3"
-            }
+        })
 
     # Meshes
-    meshes = {}
-    if batched:
-        meshes["M"] = {
+    meshes = []
+    nAttributes = 3 if textured else 2
+    for i in range(0, meshNb):
+        meshes.append({
             'primitives': [{
                 'attributes': {
-                    "POSITION": "AV",
-                    "NORMAL": "AN",
-                    "BATCHID": "AD"
+                    "POSITION": nAttributes * i,
+                    "NORMAL": nAttributes * i + 1
                 },
-                "material": "defaultMaterial",
+                "material": 0,
                 "mode": 4
             }]
-        }
-    else:
-        for i in range(0, meshNb):
-            meshes["M" + str(i)] = {
-                'primitives': [{
-                    'attributes': {
-                        "POSITION": "AV_" + str(i),
-                        "NORMAL": "AN_" + str(i)
-                    },
-                    "indices": "AI_" + str(i),
-                    "material": "defaultMaterial",
-                    "mode": 4
-                }]
-            }
+        })
+        if textured:
+            meshes[i]['primitives'][0]['attributes']['TEXCOORD_0'] = (
+                nAttributes * i + 2)
+    if batched:
+        meshes[0]['primitives'][0]['attributes']['_BATCHID'] = nAttributes
 
     # Nodes
-    if batched:
-        nodes = {
-            'node': {
-                'matrix': [float(e) for e in transform],
-                'meshes': ["M"]
-            }
-        }
-    else:
-        nodes = {
-            'node': {
-                'matrix': [float(e) for e in transform],
-                'meshes': ["M" + str(i) for i in range(0, meshNb)]
-            }
-        }
-    # TODO: one node per feature would probably be better
+    nodes = []
+    for i in range(0, meshNb):
+        nodes.append({
+            'matrix': [float(e) for e in transform],
+            'mesh': i
+        })
 
-    # Extensions
-    extensions = []
-    if bgltf:
-        extensions.append("KHR_binary_glTF")
+    # Materials
+    materials = [{
+        'pbrMetallicRoughness': {
+            'metallicFactor': 0
+        },
+        'name': 'Material',
+    }]
 
     # Final glTF
     header = {
-        'scene': "defaultScene",
-        'scenes': {
-            'defaultScene': {
-                'nodes': [
-                    "node"
-                ]
-            }
+        'asset': {
+            "generator": "py3dtiles",
+            "version": "2.0"
         },
+        'scene': 0,
+        'scenes': [{
+            'nodes': [i for i in range(0, len(nodes))]
+        }],
         'nodes': nodes,
         'meshes': meshes,
+        'materials': materials,
         'accessors': accessors,
         'bufferViews': bufferViews,
-        'buffers': buffers,
-        'materials': {
-            'defaultMaterial': {
-                'name': "None"
-            }
-        }
+        'buffers': buffers
     }
 
-    # Technique for batched glTF
-    """if batched:
-        header['materials']['defaultMaterial']['technique'] = "T0"
-        header['techniques'] = {
-            "T0": {
-                "attributes": {
-                    "a_batchId": "batchId"
-                },
-                "parameters": {
-                    "batchId": {
-                        "semantic": "_BATCHID",
-                        "type": 5123
-                    }
-                }
-            }
+    # Texture data
+    if textured:
+        header['textures'] = [{
+            'sampler': 0,
+            'source': 0
+        }]
+        header['images'] = [{
+            'uri': textureUri
+        }]
+        header['samplers'] = [{
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }]
+        header['materials'][0]['pbrMetallicRoughness']['baseColorTexture'] = {
+            'index': 0
         }
-    """
-
-    if len(extensions) != 0:
-        header["extensionsUsed"] = extensions
 
     return header
