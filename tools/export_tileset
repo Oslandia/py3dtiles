@@ -103,7 +103,7 @@ def tile_extent(extent, size, i, j):
 
 
 # TODO: transform
-def arrays2tileset(positions, normals, bboxes, weights, transform, ids=None):
+def arrays2tileset(positions, normals, bboxes, transform, weights=None, ids=None):
     print("Creating tileset...")
     maxTileSize = 2000
     featuresPerTile = 20;
@@ -120,6 +120,12 @@ def arrays2tileset(positions, normals, bboxes, weights, transform, ids=None):
     extent = BoundingBox([xMin, yMin], [xMax, yMax])
     extentX = xMax - xMin
     extentY = yMax - yMin
+
+    if weights is None:
+        # approximate surface area of geometries
+        weights = []
+        for bbox in bboxes:
+            weights.append((bbox[1][0] - bbox[0][0]) * (bbox[1][1] - bbox[0][1]))
 
     # Create quadtree
     tree = Node()
@@ -210,7 +216,7 @@ def wkbs2tileset(wkbs, weights, ids, transform):
     positions = [ts.getPositionArray() for ts in geoms]
     normals = [ts.getNormalArray() for ts in geoms]
     bboxes = [ts.getBbox() for ts in geoms]
-    arrays2tileset(positions, normals, bboxes, weights, transform, ids)
+    arrays2tileset(positions, normals, bboxes, transform, weights, ids)
 
 def from_db(db_name, table_name, column_name, id_column_name, user_name):
     user = getpass.getuser() if user_name == None else user_name
@@ -253,9 +259,25 @@ def from_db(db_name, table_name, column_name, id_column_name, user_name):
 
     wkbs2tileset(wkbs, weights, ids, transform)
 
-def from_directory(directory):
-    print("Not yet implemented")
-    exit()
+def from_directory(directory, offset):
+    offset = (0,0,0) if offset is None else offset
+    # open all wkbs from directory
+    files = os.listdir(directory)
+    files = [os.path.join(directory, f) for f in os.listdir(directory)]
+    files = [f for f in files if os.path.isfile(f) and os.path.splitext(f)[1] == '.wkb']
+    wkbs = []
+    for f in files:
+        of = open(f, 'rb')
+        wkbs.append(of.read())
+        of.close()
+
+    transform = np.array([
+        [1, 0, 0, offset[0]],
+        [0, 1, 0, offset[1]],
+        [0, 0, 1, offset[2]],
+        [0, 0, 0, 1]], dtype=float)
+    transform = transform.flatten('F')
+    wkbs2tileset(wkbs, None, None, transform)
 
 if __name__ == '__main__':
     # arg parse
@@ -266,6 +288,9 @@ if __name__ == '__main__':
 
     d_help = 'name of the directory containing the geometries'
     group.add_argument('-d', metavar='DIRECTORY', type=str, help=d_help)
+
+    o_help = 'offset of the geometries (only with -d)'
+    parser.add_argument('-o', nargs=3, metavar=('X', 'Y', 'Z'), type=float, help=o_help)
 
     D_help = 'database name'
     group.add_argument('-D', metavar='DATABASE', type=str, help=D_help)
@@ -291,6 +316,6 @@ if __name__ == '__main__':
     if args.D != None:
         from_db(args.D, args.t, args.c, args.i, args.u)
     elif args.d != None:
-        from_directory(args.d)
+        from_directory(args.d, args.o)
     else:
         parser.print_help()
