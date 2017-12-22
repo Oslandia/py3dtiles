@@ -54,7 +54,8 @@ specification:
 
 Moreover, a utility class *TileReader* is available to read a tile
 file as well as a simple command line tool to retrieve basic information
-about a tile: **py3dtiles\_info**.
+about a tile: **py3dtiles\_info**. We also provide a utility to generate a
+tileset from a list of 3D models in WKB format or stored in a postGIS table.
 
 **How to use py3dtiles\_info**
 
@@ -79,6 +80,33 @@ case *pointCloudRGB.pnts*:
     First point
     -----------
     {'Z': -0.17107764, 'Red': 44, 'X': 2.19396, 'Y': 4.4896851, 'Green': 243, 'Blue': 209}
+
+
+**How to use export\_tileset**
+
+Two export modes are available, the database export or the directory export.
+They both transform all the geometries provided in .b3dm files, along with a
+tileset.json file which organizes them.
+
+The directory export will use all the .wkb files in the provided directory.
+Warning: the coordinates are read as floats, not doubles. Make sure to offset
+the coordinates beforehand to reduce their size. Afterwards, you can indicate
+in the command line the offset that needs to be applied to the tileset so it is
+correctly placed. Usage example:
+
+.. code-block:: shell
+
+    $ export_tileset -d my_directory -o 10000 10000 0
+
+
+The database export requires a user name, a database name, the name of the table
+and its column that contains the geometry and (optionaly) the name of the column
+that contains the object's ID. Usage example:
+
+.. code-block:: shell
+
+    $ export_tileset -D database -t my_city -c geom -i id -u oslandia
+
 
 Point Cloud
 ~~~~~~~~~~~
