@@ -61,7 +61,7 @@ class Node():
             "geometricError": 500, # TODO
             "root" : self.to_tileset_r(500)
         }
-        tiles["root"]["transform"] = [float(e) for e in transform]
+        tiles["root"]["transform"] = [round(float(e), 3) for e in transform]
         return tiles
 
     def to_tileset_r(self, error):
@@ -70,7 +70,7 @@ class Node():
         xAxis = [c2[0] - c1[0], 0, 0]
         yAxis = [0, c2[1] - c1[1], 0]
         zAxis = [0, 0, c2[2] - c1[2]]
-        box = center + xAxis + yAxis + zAxis
+        box = [round(x, 3) for x in center + xAxis + yAxis + zAxis]
         tile = {
             "boundingVolume": {
                 "box": box
