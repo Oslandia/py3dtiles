@@ -101,6 +101,7 @@ class GlTF(object):
         binUvs = []
         nVertices = []
         bb = []
+        batchLength = 0
         for i, geometry in enumerate(arrays):
             binVertices.append(geometry['position'])
             binNormals.append(geometry['normal'])
@@ -108,7 +109,7 @@ class GlTF(object):
             nVertices.append(n)
             bb.append(geometry['bbox'])
             if batched:
-                binIds.append(np.full(n, i, dtype=np.uint32))
+                binIds.append(np.full(n, i, dtype=np.float32))
             if textured:
                 binUvs.append(geometry['uv'])
 
@@ -118,9 +119,11 @@ class GlTF(object):
             binUvs = [b''.join(binUvs)]
             binIds = [b''.join(binIds)]
             nVertices = [sum(nVertices)]
+            batchLength = len(arrays)
 
         glTF.header = compute_header(binVertices, nVertices, bb, transform,
-                                     textured, batched, uri, textureUri)
+                                     textured, batched, batchLength, uri,
+                                     textureUri)
         glTF.body = np.frombuffer(compute_binary(binVertices, binNormals,
                                   binIds, binUvs), dtype=np.uint8)
 
@@ -136,7 +139,7 @@ def compute_binary(binVertices, binNormals, binIds, binUvs):
 
 
 def compute_header(binVertices, nVertices, bb, transform,
-                   textured, batched, uri, textureUri):
+                   textured, batched, batchLength, uri, textureUri):
     # Buffer
     meshNb = len(binVertices)
     sizeVce = []
@@ -224,8 +227,8 @@ def compute_header(binVertices, nVertices, bb, transform,
             'byteOffset': 0,
             'componentType': 5126,
             'count': nVertices[0],
-            'max': [0],
-            'min': [meshNb],
+            'max': [batchLength],
+            'min': [0],
             'type': "SCALAR"
         })
 
