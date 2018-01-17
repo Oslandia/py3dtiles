@@ -161,7 +161,7 @@ class B3dmBody(TileBody):
         # TODO : export feature table
         array = self.glTF.to_array()
         if self.batch_table is not None:
-            np.concatenate((self.batch_table.to_array(), array))
+            array = np.concatenate((self.batch_table.to_array(), array))
         return array
 
     @staticmethod
