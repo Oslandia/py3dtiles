@@ -120,6 +120,16 @@ class GlTF(object):
             binIds = [b''.join(binIds)]
             nVertices = [sum(nVertices)]
             batchLength = len(arrays)
+            [minx, miny, minz] = bb[0][0]
+            [maxx, maxy, maxz] = bb[0][1]
+            for box in bb[1:]:
+                minx = min(minx, box[0][0])
+                miny = min(miny, box[0][1])
+                minz = min(minz, box[0][2])
+                maxx = max(maxx, box[1][0])
+                maxy = max(maxy, box[1][1])
+                maxz = max(maxz, box[1][2])
+            bb = [[[minx, miny, minz], [maxx, maxy, maxz]]]
 
         glTF.header = compute_header(binVertices, nVertices, bb, transform,
                                      textured, batched, batchLength, uri,
