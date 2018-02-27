@@ -27,6 +27,8 @@ doc_requirements = (
 prod_requirements = (
 )
 
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 def find_version(*file_paths):
     """
@@ -50,6 +52,7 @@ setup(
     name='py3dtiles',
     version=find_version('py3dtiles', '__init__.py'),
     description="Python module for 3D tiles format",
+    long_description=read('README.rst'),
     url='https://github.com/Oslandia/py3dtiles',
     author='dev',
     author_email='contact@oslandia.com',
