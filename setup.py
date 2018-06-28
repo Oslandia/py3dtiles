@@ -11,7 +11,12 @@ requirements = (
     'pyproj',
     'cython',
     'triangle',
-    'psycopg2-binary'
+    'psycopg2-binary',
+    'liblas',
+    'laspy',
+    'numpy',
+    'memory_profiler',
+    'pyproj'
 )
 
 dev_requirements = (
@@ -54,7 +59,7 @@ setup(
     description="Python module for 3D tiles format",
     long_description=read('README.rst'),
     url='https://github.com/Oslandia/py3dtiles',
-    author='dev',
+    author='Oslandia',
     author_email='contact@oslandia.com',
     license='LGPL2 or later',
     classifiers=[
@@ -71,5 +76,8 @@ setup(
         'dev': dev_requirements,
         'prod': prod_requirements,
         'doc': doc_requirements
+    },
+    entry_points = {
+        'console_scripts': ['py3dtiles=py3dtiles.command_line:main'],
     }
 )
