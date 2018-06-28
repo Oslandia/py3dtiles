@@ -1,8 +1,5 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import argparse
-
 from py3dtiles import TileReader
 
 
@@ -55,9 +52,8 @@ def print_b3dm_info(tile):
     print(gltfh)
 
 
-def print_info(filename):
-
-    tile = TileReader().read_file(filename)
+def main(args):
+    tile = TileReader().read_file(args.filename)
     magic = tile.header.magic_value
 
     if magic == "pnts":
@@ -67,14 +63,9 @@ def print_info(filename):
     else:
         raise RuntimeError("Unsupported format " + magic)
 
-if __name__ == '__main__':
+
+def init_parser(subparser, str2bool):
     # arg parse
-    descr = 'Extract informations from a 3DTiles file'
-    parser = argparse.ArgumentParser(description=descr)
+    parser = subparser.add_parser('info', help='Extract informations from a 3DTiles file')
 
-    f_help = 'filename'
-    parser.add_argument('f', metavar='f', type=str, help=f_help)
-
-    args = parser.parse_args()
-
-    print_info(args.f)
+    parser.add_argument('filename', type=str)

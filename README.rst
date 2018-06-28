@@ -7,11 +7,18 @@
 py3dtiles
 =========
 
-Python module to manage 3DTiles format.
+Python module to read/write 3DTiles format.
 
-For now, only the Point Cloud and the Batched 3D Model specifications are supported.
+Command line features:
+  * convert pointclouds (.las format) in a tileset (tileset.json + pnts files)
+  * merge several pointcloud tilesets in a single one
+  * read pnts and b3dm file and print a summary of their content
 
-py3dtiles is distributed under LGPL2 or later.
+API features:
+  * read/write pointcloud (pnts) and batched 3d model format
+
+
+py3dtiles is distributed under the Apache 2 Licence.
 
 
 Install
@@ -24,6 +31,7 @@ To use py3dtiles from sources:
 
 .. code-block:: shell
 
+    $ apt install git python3 python3-pip virtualenv libopenblas-base liblas-c3
     $ git clone https://github.com/Oslandia/py3dtiles
     $ cd py3dtiles
     $ virtualenv -p /usr/bin/python3 venv
@@ -39,32 +47,19 @@ If you wan to run unit tests:
     (venv)$ nosetests
     ...
 
-Specifications
---------------
 
-Generic Tile
-~~~~~~~~~~~~
+Command line usage
+------------------
 
-The py3dtiles module provides some classes to fit into the
-specification:
-
-- *Tile* with a header *TileHeader* and a body *TileBody*
-- *TileHeader* represents the metadata of the tile (magic value, version, ...)
-- *TileBody* contains varying semantic and geometric data depending on the the tile's type
-
-Moreover, a utility class *TileReader* is available to read a tile
-file as well as a simple command line tool to retrieve basic information
-about a tile: **py3dtiles\_info**. We also provide a utility to generate a
-tileset from a list of 3D models in WKB format or stored in a postGIS table.
-
-**How to use py3dtiles\_info**
+info
+~~~~
 
 Here is an example on how to retrieve basic information about a tile, in this
 case *pointCloudRGB.pnts*:
 
 .. code-block:: shell
 
-    $ py3dtiles_info tests/pointCloudRGB.pnts
+    $ py3dtiles info tests/pointCloudRGB.pnts
     Tile Header
     -----------
     Magic Value:  pnts
@@ -82,7 +77,34 @@ case *pointCloudRGB.pnts*:
     {'Z': -0.17107764, 'Red': 44, 'X': 2.19396, 'Y': 4.4896851, 'Green': 243, 'Blue': 209}
 
 
-**How to use export\_tileset**
+convert
+~~~~~~~
+
+The convert sub-command can be used to convert one or several .las file to a 3dtiles tileset.
+
+It also support crs reprojection of the points (see py3dtiles convert --help for all the options).
+
+
+.. code-block:: shell
+
+    py3dtiles convert mypointcloud.las --out /tmp/destination
+
+
+merge
+~~~~~
+
+The merge feature is a special use case: it generates a meta-tileset from a group of existing tilesets.
+
+It's useful to be able only a part of a pointcloud. For instance: if one has 6 input las file (A.las, B.las, ..., F.las), there are 2 solutions to vizualize them all in a 3dtiles viewer:
+  * run `py3dtiles convert A.las B.las ... F.las` and diplay the resulting tileset
+  * or run `py3dtiles convert A.las`, then `py3dtiles convert B.las`, ... and then run `py3dtiles merge`
+
+  The advantage of the 2nd option, is that it allows to update a part of the pointcloud easily.
+  e.g: if a new B.las is available, with option 1 the full tileset has to be rebuild from scratch, while with option 2, only the B.las part has to be rebuilt + the merge command.
+
+
+export
+~~~~~~
 
 Two export modes are available, the database export or the directory export.
 They both transform all the geometries provided in .b3dm files, along with a
@@ -98,7 +120,6 @@ correctly placed. Usage example:
 
     $ export_tileset -d my_directory -o 10000 10000 0
 
-
 The database export requires a user name, a database name, the name of the table
 and its column that contains the geometry and (optionaly) the name of the column
 that contains the object's ID. Usage example:
@@ -106,6 +127,24 @@ that contains the object's ID. Usage example:
 .. code-block:: shell
 
     $ export_tileset -D database -t my_city -c geom -i id -u oslandia
+
+API usage
+---------
+
+Generic Tile
+~~~~~~~~~~~~
+
+The py3dtiles module provides some classes to fit into the
+specification:
+
+- *Tile* with a header *TileHeader* and a body *TileBody*
+- *TileHeader* represents the metadata of the tile (magic value, version, ...)
+- *TileBody* contains varying semantic and geometric data depending on the the tile's type
+
+Moreover, a utility class *TileReader* is available to read a tile
+file as well as a simple command line tool to retrieve basic information
+about a tile: **py3dtiles\_info**. We also provide a utility to generate a
+tileset from a list of 3D models in WKB format or stored in a postGIS table.
 
 
 Point Cloud
