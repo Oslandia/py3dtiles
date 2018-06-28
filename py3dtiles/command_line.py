@@ -516,9 +516,8 @@ Error.
             if args.verbose >= 2:
                 print('{:^16}|{:^8}|{:^8}'.format('Name', 'Points', 'Seconds'))
                 for j in pointcloud_file_splitting_result:
-                    print('{:^16}|{:^6}|{:^8}|{:^8}'.format(
+                    print('{:^16}|{:^8}|{:^8}'.format(
                         'root',
-                        '...',
                         _1M,
                         round(now - j[1], 1)))
 
