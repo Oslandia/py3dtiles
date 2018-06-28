@@ -145,7 +145,7 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
                 # #  - don't have any pending points if level < halt_at_depth - 1
                 # assert halt_at_depth == 1 or len(node.pending_xyz) == 0
 
-                if batch > 200.000:
+                if batch > 200000:
                     # print('batch {}'.format(name))
                     written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
                     total -= written
