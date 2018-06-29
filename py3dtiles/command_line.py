@@ -91,7 +91,7 @@ def temp_file_to_pnts(filename, out_folder):
 
 def write_3dtiles(node_store, in_folder, out_folder, level_range, verbose):
     start = time.time()
-    if verbose >= 0:
+    if verbose >= 1:
         print('>>>>>>>>>>>>>>>>>>>> write_3dtiles {}'.format(level_range))
     # dump_levels_on_disk(cache, in_folder, level_range, verbose)
 
@@ -109,11 +109,12 @@ def write_3dtiles(node_store, in_folder, out_folder, level_range, verbose):
             data,
             out_folder)]
 
-    print('{} files to write for levels {}'.format(len(jobs), level_range))
+    if verbose >= 1:
+        print('{} files to write for levels {}'.format(len(jobs), level_range))
     pool.shutdown()
     count = sum([j.result() for j in jobs])
 
-    if verbose >= 0:
+    if verbose >= 1:
         print('<<<<<<<<<<<<<<<<<<<< write_3dtiles {} {} = {}, {} sec'.format(
             level_range, count,
             round(middle - start, 3),
@@ -136,7 +137,7 @@ def write_tileset(in_folder, out_folder, root_aabb, offset, scale, projection, r
 
     tileset = {
         'asset': {'version' : '1.0'},
-        'geometricError': root_tileset['geometricError'],
+        'geometricError': np.linalg.norm(root_aabb[1] - root_aabb[0]) / scale[0],
         'root' : root_tileset
     }
 
@@ -159,18 +160,20 @@ def keep_cache_size_under_control(cache, pid, working_dir, max_size_MB, verbose)
     while True:
         time.sleep(1)
 
-        cache.print_statistics()
+        if verbose >= 1:
+            cache.print_statistics()
 
         before = memory_usage(proc=pid)[0]
         if before < max_size_MB:
             continue
 
-        print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> CACHE CLEANING [{}]'.format(before))
+        if verbose >= 2:
+            print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> CACHE CLEANING [{}]'.format(before))
         dropped = cache.remove_oldest_nodes(1 - max_size_MB / before)
+        if verbose >= 2:
+            print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< CACHE CLEANING')
 
-        print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< CACHE CLEANING')
-
-        if verbose >= 0:
+        if verbose >= 1:
             print('Mem used: {} MB. Dropped = {})'.format(
                 memory_usage(proc=pid)[0],
                 dropped))
@@ -194,16 +197,15 @@ def main():
     parser.add_argument('--cache_size', dest='cache_size', help='Cache size in MB', default=1000, type=int)
     parser.add_argument('--srs_out', help='SRS to use as output (EPSG code)', type=str)
     parser.add_argument('--srs_in', help='Override input SRS (EPSG code)', type=str)
+    parser.add_argument('--benchmark', help='Print summary at the end of the process', type=str)
 
     args = parser.parse_args()
 
     folder = args.out if args.out is not None else os.path.splitext(args.files[0])[0]
 
-    print (folder)
     # create folder
     if os.path.isdir(folder):
         if args.overwrite:
-            print('Remove {}'.format(folder))
             shutil.rmtree(folder)
         else:
             print('Error, folder \'{}\' already exists'.format(folder))
@@ -263,9 +265,6 @@ Error.
         for p in portions:
             pointcloud_file_portions += [(filename, offset, p)]
 
-    print('Points to process: {}'.format(total_point_count))
-    print('avg_min: {}'.format(avg_min))
-
     rotation_matrix = None
     if projection:
         bl = np.array(list(pyproj.transform(
@@ -283,7 +282,6 @@ Error.
             avg_min[0], avg_min[1], avg_min[2])))
 
         x_axis = br - bl
-        print('{} - {} = {}'.format(br, bl, x_axis))
 
         bl = bl - avg_min
         tr = tr - avg_min
@@ -310,14 +308,15 @@ Error.
 
     root_aabb = root_aabb * root_scale
 
-    print(root_aabb)
-    print(avg_min)
     _4326 = pyproj.Proj(init='epsg:4326')
 
-    if projection:
-        print(pyproj.transform(projection[1], _4326, avg_min[0], avg_min[1], avg_min[2]))
-
     root_spacing = compute_spacing(root_aabb)
+
+    if args.verbose >= 1:
+        print('Summary:')
+        print('  - points to process: {}'.format(total_point_count))
+        print('  - offset to use: {}'.format(avg_min))
+        print('  - root spacing: {}'.format(root_spacing / root_scale[0]))
 
     startup = time.time()
 
@@ -499,17 +498,27 @@ Error.
                 queue.empty()):
                     if _3dtiles_job is not None:
                         points_in_pnts += _3dtiles_job.result()
-                    print('WAIT executor...{}'.format(points_in_pnts))
+                    if args.verbose >= 1:
+                        print('WAIT executor...{}'.format(points_in_pnts))
                     executor.shutdown()
-                    print('Writing 3dtiles {}'.format(avg_min))
+                    if args.verbose >= 1:
+                        print('Writing 3dtiles {}'.format(avg_min))
                     p = multiprocessing.Process(
                         target=write_tileset,
                         args=(working_dir, folder, root_aabb, avg_min, root_scale, projection, rotation_matrix))
                     p.start()
                     p.join()
                     shutil.rmtree(working_dir)
-                    print('Done')
+                    if args.verbose >= 1:
+                        print('Done')
                     cache_mgmt.terminate()
+
+                    if args.benchmark is not None:
+                        print('{},{},{},{}'.format(
+                            args.benchmark,
+                            ','.join([os.path.basename(f) for f in args.files]),
+                            points_in_pnts,
+                            round(time.time() - startup, 1)))
                     break
 
         if at_least_one_job_ended:
@@ -561,12 +570,13 @@ Error.
             if args.verbose >= 1:
                 print('.', end='', flush=True)
             else:
-                percent = round(100 * processed_points / total_point_count, 2)
-                time_left = (100 - percent) * now / (percent + 0.001)
-                print('\r{:>6} % in {} sec [est. time left: {} sec]'.format(percent, round(now), round(time_left)), end='', flush=True)
-                if int(percent) != previous_percent:
-                    print('')
-                    previous_percent = int(percent)
+                if args.verbose >= 0:
+                    percent = round(100 * processed_points / total_point_count, 2)
+                    time_left = (100 - percent) * now / (percent + 0.001)
+                    print('\r{:>6} % in {} sec [est. time left: {} sec]'.format(percent, round(now), round(time_left)), end='', flush=True)
+                    if False and int(percent) != previous_percent:
+                        print('')
+                        previous_percent = int(percent)
 
             time.sleep(0.1)
 
