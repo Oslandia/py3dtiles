@@ -60,21 +60,22 @@ def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, p
             z = Z[start_offset:start_offset + num] * f.header.scale[2] + f.header.offset[2]
 
             if projection:
-                _4326 = pyproj.Proj(init='epsg:4326')
-                x, y, z = pyproj.transform(projection[0], _4326, x, y, z)
-                x, y, z = pyproj.transform(_4326, projection[1], x, y, z)
+                x, y, z = pyproj.transform(projection[0], projection[1], x, y, z)
 
             x = (x + offset_scale[0][0]) * offset_scale[1][0]
             y = (y + offset_scale[0][1]) * offset_scale[1][1]
             z = (z + offset_scale[0][2]) * offset_scale[1][2]
 
-            coords = np.vstack((x, y, z)).transpose().astype(np.float32)
+            coords = np.vstack((x, y, z)).transpose()
 
             if offset_scale[2] is not None:
                 # Apply transformation matrix (because the tile's transform will contain
                 # the inverse of this matrix)
-                for i in range(len(coords)):
-                    coords[i] = np.dot(coords[i], offset_scale[2])
+                coords = np.dot(coords, offset_scale[2])
+                # for i in range(len(coords)):
+                #     coords[i] = np.dot(coords[i], offset_scale[2])
+
+            coords = coords.astype(np.float32)
 
             # Read colors
             red = RED[start_offset:start_offset + num]
