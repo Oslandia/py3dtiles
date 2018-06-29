@@ -266,6 +266,9 @@ class Node(object):
 
         if children:
             tile['children'] = children
+            # node ('') has no points,
+            if len(name) == 0:
+                tile['geometricError'] = np.linalg.norm(node.aabb_size) / scale[0],
         else:
             tile['geometricError'] = 0.0
 
