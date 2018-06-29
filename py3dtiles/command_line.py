@@ -321,8 +321,7 @@ Error.
 
     executor = concurrent.futures.ProcessPoolExecutor(max_workers=(args.jobs + 1))
 
-    m = multiprocessing.Manager()
-    queue = m.Queue()
+    queue = manager.Queue()
 
     initial_portion_count = len(pointcloud_file_portions)
     random.shuffle(pointcloud_file_portions)
