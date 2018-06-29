@@ -91,7 +91,7 @@ def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, p
             #   - create children (so when we serialize root, we'll remember that we have children)
             #   - clear pending
             #   - write .npz files, named after the child they belong to
-            result = root.write_pending_to_disk(folder, None, True, 0)
+            result = root.write_pending_to_disk(folder, None, False, 0)
 
             for r in result:
                 queue.put(r)

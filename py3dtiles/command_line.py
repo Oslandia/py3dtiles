@@ -246,7 +246,6 @@ Error.
     avg_min = np.array([0., 0., 0.])
     for filename in args.files:
         f = File(filename, mode='r')
-        offset = np.array(f.header.offset)
         avg_min += (np.array(f.header.min) / len(args.files))
 
         if aabb is None:
@@ -263,7 +262,7 @@ Error.
         steps = math.ceil(count / _1M)
         portions = [(i * _1M, min(count, (i + 1) * _1M)) for i in range(steps)]
         for p in portions:
-            pointcloud_file_portions += [(filename, offset, p)]
+            pointcloud_file_portions += [(filename, p)]
 
     rotation_matrix = None
     if projection:
@@ -455,7 +454,7 @@ Error.
                     points_in_progress < 60000000):
                 if args.verbose >= 1:
                     print('Submit next portion {}'.format(pointcloud_file_portions[-1]))
-                file, offset, portion = pointcloud_file_portions.pop()
+                file, portion = pointcloud_file_portions.pop()
                 points_in_progress += portion[1] - portion[0]
                 pointcloud_file_splitting_result += [(executor.submit(
                     process_root_node,
