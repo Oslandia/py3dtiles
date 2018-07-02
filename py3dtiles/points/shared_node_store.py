@@ -1,5 +1,6 @@
 import os
 import time
+import gzip
 import lzma
 from .utils import name_to_filename
 
@@ -39,11 +40,11 @@ class SharedNodeStore:
                 self.stats['new'].value += stat_inc
 
         self.lock.release()
-        return lzma.decompress(data) if data is not None else None
+        return gzip.decompress(data) if data is not None else None
 
     def put(self, name, data):
         b = time.time()
-        compressed_data = lzma.compress(data, preset=1)
+        compressed_data = gzip.compress(data, compresslevel=1)
         # for i in range(1, 8):
         #     print('[{}] : {}x ratio in {} sec [{} bytes]'.format(
         #         i,

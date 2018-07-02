@@ -17,6 +17,7 @@ import pickle
 import gc
 import py3dtiles
 import logging
+import gzip
 import lzma
 import concurrent.futures
 import liblas
@@ -80,7 +81,7 @@ def temp_file_to_pnts(filename, out_folder):
     count = 0
 
     with open(filename, 'rb') as f:
-        nodes = pickle.loads(lzma.decompress(f.read()))
+        nodes = pickle.loads(gzip.decompress(f.read()))
 
         for name in nodes:
             count += bytes_to_pnts(name,

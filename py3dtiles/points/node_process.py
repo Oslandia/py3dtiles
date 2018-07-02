@@ -4,6 +4,7 @@ import time
 import traceback
 import pickle
 from memory_profiler import memory_usage
+import concurrent.futures
 
 from .distance_test import xyz_to_child_index
 from .node_catalog import NodeCatalog
@@ -71,6 +72,90 @@ def forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, 
 
     return total
 
+def _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file):
+    node_catalog = NodeCatalog(node_store, folder, root_aabb, root_spacing, True)
+    node_catalog.init(name)
+
+    log_enabled = log_file is not None
+
+    if log_enabled:
+        print('[>] process_node: "{}", {}. Mem: {}'.format(
+            name, len(filenames), memory_usage(proc=os.getpid())[0]), file=log_file, flush=True)
+
+    node = node_catalog.get(name)
+
+    halt_at_depth = 1
+    if len(name) >= 7:
+        halt_at_depth = 5
+    elif len(name) >= 5:
+        halt_at_depth = 3
+    elif len(name) > 1:
+        halt_at_depth = 2
+
+    batch = 0
+    total = 0
+    total_queued = 0
+
+    for filename in filenames:
+        # TODO node_catalog.keep_memory_usage_below(cache_size)
+        if log_enabled:
+            print('  -> read source [{}]'.format(time.time() - begin), file=log_file, flush=True)
+        if isinstance(filename, str):
+            with open(filename, 'rb') as f:
+                raw_data = f.read()
+        else:
+            raw_data = filename
+
+        data = pickle.loads(raw_data)
+
+        point_count = len(data['xyz'])
+
+        if log_enabled:
+            print('  -> insert {} [{} points]/ {} files [{}]'.format(
+                filenames.index(filename) + 1, point_count,
+                len(filenames), time.time() - begin), file=log_file, flush=True)
+
+        # insert points in node (no children handling here)
+        node.insert(node_catalog, data['xyz'], data['rgb'])
+
+        batch += point_count
+        total += point_count
+
+        if log_enabled:
+            print('  -> flush [{}]'.format(time.time() - begin), file=log_file, flush=True)
+        # flush push pending points (= call insert) from level N to level N + 1
+        # (flush is recursive)
+        flush(node, node_catalog, halt_at_depth - 1)
+
+        # if log_enabled:
+        #     print('  -> assert conditions = {} or {}'.format(halt_at_depth == 1, len(node.pending_xyz) == 0), file=log_file)
+        # # at this point we only have nodes that are:
+        # #  - serializable
+        # #  - don't have any pending points if level < halt_at_depth - 1
+        # assert halt_at_depth == 1 or len(node.pending_xyz) == 0
+
+        if batch > 200000:
+            # print('batch {}'.format(name))
+            written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
+            total -= written
+            total_queued += written
+            batch = 0
+
+    written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
+    total -= written
+    total_queued += written
+
+    if log_enabled:
+        print('save on disk {} [{}]'.format(name, time.time() - begin), file=log_file)
+
+    # save node state on disk
+    node_catalog.save_on_disk(name, True, 0, halt_at_depth - 1)
+
+    if log_enabled:
+        print('saved on disk [{}]'.format(time.time() - begin), file=log_file)
+
+    return (total, total_queued)
+
 def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbose):
     try:
         # print(">> CAS 2: {}".format(memory_usage(proc=os.getpid())))
@@ -84,103 +169,24 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
 
         total_queued = 0
         total = 0
-        total_read = 0
 
         to_save = []
 
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+
         # read filenames
+        jobs = []
         for name, filenames in work:
-            node_catalog = NodeCatalog(node_store, folder, root_aabb, root_spacing, True)
-            node_catalog.init(name)
+            jobs += [pool.submit(_process,
+                node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file)]
 
-            if log_enabled:
-                print('[>] process_node: "{}", {}. Mem: {}'.format(name, len(filenames), memory_usage(proc=os.getpid())[0]), file=log_file, flush=True)
+        pool.shutdown()
 
-            node = node_catalog.get(name)
+        for job in jobs:
+            result = job.result()
+            total += result[0]
+            total_queued += result[1]
 
-            halt_at_depth = 1
-            if len(name) >= 7:
-                halt_at_depth = 5
-            elif len(name) >= 5:
-                halt_at_depth = 3
-            elif len(name) > 1:
-                halt_at_depth = 2
-
-            batch = 0
-            for filename in filenames:
-                # TODO node_catalog.keep_memory_usage_below(cache_size)
-                if log_enabled:
-                    print('  -> read source [{}]'.format(time.time() - begin), file=log_file, flush=True)
-                if isinstance(filename, str):
-                    with open(filename, 'rb') as f:
-                        raw_data = f.read()
-                else:
-                    raw_data = filename
-
-                data = pickle.loads(raw_data)
-
-                point_count = len(data['xyz'])
-
-                if log_enabled:
-                    print('  -> insert {} [{} points]/ {} files [{}]'.format(
-                        filenames.index(filename) + 1, point_count, len(filenames), time.time() - begin), file=log_file, flush=True)
-
-                # insert points in node (no children handling here)
-                node.insert(node_catalog, data['xyz'], data['rgb'])
-
-                batch += point_count
-                total += point_count
-                total_read += point_count
-
-                if log_enabled:
-                    print('  -> flush [{}]'.format(time.time() - begin), file=log_file, flush=True)
-                # flush push pending points (= call insert) from level N to level N + 1
-                # (flush is recursive)
-                flush(node, node_catalog, halt_at_depth - 1)
-
-                # if log_enabled:
-                #     print('  -> assert conditions = {} or {}'.format(halt_at_depth == 1, len(node.pending_xyz) == 0), file=log_file)
-                # # at this point we only have nodes that are:
-                # #  - serializable
-                # #  - don't have any pending points if level < halt_at_depth - 1
-                # assert halt_at_depth == 1 or len(node.pending_xyz) == 0
-
-                if batch > 200000:
-                    # print('batch {}'.format(name))
-                    written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
-                    total -= written
-                    total_queued += written
-                    batch = 0
-
-            written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
-            total -= written
-            total_queued += written
-
-            if log_enabled:
-                print('save on disk {} [{}]'.format(name, time.time() - begin), file=log_file)
-
-            # save node state on disk
-            node_catalog.save_on_disk(name, True, 0, halt_at_depth - 1)
-
-            if log_enabled:
-                print('saved on disk [{}]'.format(time.time() - begin), file=log_file)
-
-
-        if False:
-            count_after = node.get_point_count(node_catalog, halt_at_depth - 1)
-            check = count_after - count_before + total_queued
-            if check != total_read:
-                print('###########################################')
-                print('CHECK: {} - {} + {} = {} == {}'.format(
-                    count_after, count_before,
-                    total_queued,
-                    count_after - count_before + total_queued,
-                    total_read))
-
-        # write node 0 + nodes 1
-
-
-        # print('{} => {} | {}'.format(name, out, result))
         if log_enabled:
             print('[<] return result [{} sec, {} MB] [{}]'.format(
                 round(time.time() - begin, 2),
