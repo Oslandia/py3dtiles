@@ -27,6 +27,7 @@ def are_point_far_enough(points, tested, index, dist):
 class CellNumpy(object):
     """docstring for CellNumpy"""
 
+    __slots__ = ('sq_spacing', 'count', 'storage')
     def __init__(self, spacing):
         super(CellNumpy, self).__init__()
         self.sq_spacing = spacing * spacing
@@ -76,6 +77,7 @@ class CellNumpy(object):
 class Grid(object):
     """docstring for Grid"""
 
+    __slots__ = ('cell_size', 'cells')
     def __init__(self, node):
         super(Grid, self).__init__()
         self.cell_size = np.floor((node.aabb[1] - node.aabb[0]) / (node.spacing * 5.0)).astype(np.float32)
