@@ -172,20 +172,27 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
 
         to_save = []
 
-        pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 
-        # read filenames
-        jobs = []
-        for name, filenames in work:
-            jobs += [pool.submit(_process,
-                node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file)]
+        # use threads as a workaround to GIL
+        if len(work) > 1:
+            pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+            jobs = []
+            for name, filenames in work:
+                jobs += [pool.submit(_process,
+                    node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file)]
 
-        pool.shutdown()
+            pool.shutdown()
 
-        for job in jobs:
-            result = job.result()
-            total += result[0]
-            total_queued += result[1]
+            for job in jobs:
+                result = job.result()
+                total += result[0]
+                total_queued += result[1]
+        else:
+            for name, filenames in work:
+                result = _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file)
+                total += result[0]
+                total_queued += result[1]
+
 
         if log_enabled:
             print('[<] return result [{} sec, {} MB] [{}]'.format(
