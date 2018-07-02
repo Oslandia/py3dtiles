@@ -5,6 +5,7 @@ import pickle
 import os
 import uuid
 import time
+import json
 
 from .utils import name_to_filename, node_from_name, SubdivisionType, aabb_size_to_subdivision_type
 from .points_grid import Grid
@@ -250,7 +251,6 @@ class Node(object):
             },
             # geometricError is in meter so cancel scale
             'geometricError': 10 * node.spacing / scale[0],
-            'refine': 'ADD'
         }
 
         ondisk_tile = name_to_filename(folder, name, '.pnts')
@@ -271,5 +271,19 @@ class Node(object):
                 tile['geometricError'] = np.linalg.norm(node.aabb_size) / scale[0],
         else:
             tile['geometricError'] = 0.0
+
+        if len(name) > 0 and children:
+            if len(json.dumps(tile)) > 100000:
+                tile_root = {
+                    'asset': {'version' : '1.0'},
+                    'geometricError': tile['geometricError'],
+                    'root' : tile
+                }
+                tileset_name = 'tileset.{}.json'.format(name)
+                with open('{}/{}'.format(folder, tileset_name), 'w') as f:
+                    f.write(json.dumps(tile_root))
+                tile['content'] = { 'url': tileset_name }
+                tile['children'] = []
+
 
         return tile
