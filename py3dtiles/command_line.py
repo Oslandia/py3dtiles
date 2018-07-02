@@ -183,7 +183,7 @@ def main():
     parser.add_argument('files', nargs='+', help='Filenames to process. The file must use the .las format.')
     parser.add_argument('--out', dest='out', type=str, help='The folder where the resulting tileset will be written.')
     parser.add_argument('--overwrite', dest='overwrite', help='Overwrite the ouput folder if it already exists.', default=False, type=str2bool)
-    parser.add_argument('--jobs', dest='jobs', help='The number of parallel jobs to start.', default=1, type=int)
+    parser.add_argument('--jobs', dest='jobs', help='The number of parallel jobs to start.', default=multiprocessing.cpu_count(), type=int)
     parser.add_argument('--cache_size', dest='cache_size', help='Cache size in MB', default=1000, type=int)
     parser.add_argument('--srs_out', help='SRS to use as output (EPSG code)', type=str)
     parser.add_argument('--srs_in', help='Override input SRS (EPSG code)', type=str)
@@ -202,6 +202,8 @@ def main():
         else:
             print('Error, folder \'{}\' already exists'.format(folder))
             sys.exit(1)
+
+    print('launching script with {} jobs'.format(args.jobs))
 
     # working_dir = tempfile.TemporaryDirectory(prefix='py3dtiles')
     os.makedirs(folder)
@@ -322,7 +324,7 @@ Error.
 
     startup = time.time()
 
-    executor = concurrent.futures.ProcessPoolExecutor(max_workers=(args.jobs + 1))
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs)
 
     queue = manager.Queue()
 
