@@ -242,7 +242,6 @@ Error.
     aabb = None
     total_point_count = 0
     pointcloud_file_portions = []
-    root_scale = np.array([0.01, 0.01, 0.01])
     avg_min = np.array([0., 0., 0.])
     for filename in args.files:
         f = File(filename, mode='r')
@@ -305,10 +304,18 @@ Error.
         # offset
         root_aabb = aabb - avg_min
 
+    original_aabb = root_aabb
+
+    if True:
+        base_spacing = compute_spacing(root_aabb)
+        if base_spacing > 10:
+            root_scale = np.array([0.01, 0.01, 0.01])
+        elif base_spacing > 1:
+            root_scale = np.array([0.1, 0.1, 0.1])
+        else:
+            root_scale = np.array([1.0, 1.0, 1.0])
+
     root_aabb = root_aabb * root_scale
-
-    _4326 = pyproj.Proj(init='epsg:4326')
-
     root_spacing = compute_spacing(root_aabb)
 
     if args.verbose >= 1:
@@ -316,6 +323,8 @@ Error.
         print('  - points to process: {}'.format(total_point_count))
         print('  - offset to use: {}'.format(avg_min))
         print('  - root spacing: {}'.format(root_spacing / root_scale[0]))
+        print('  - root aabb: {}'.format(root_aabb))
+        print('  - original aabb: {}'.format(original_aabb))
 
     startup = time.time()
 
