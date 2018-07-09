@@ -10,6 +10,7 @@ from .distance_test import xyz_to_child_index
 from .node_catalog import NodeCatalog
 from .utils import SubdivisionType, aabb_size_to_subdivision_type
 
+
 def flush(node, node_catalog, max_depth=1, depth=0):
     if depth == max_depth:
         return
@@ -30,8 +31,6 @@ def flush(node, node_catalog, max_depth=1, depth=0):
                 name = '{}{}'.format(node.name, unique_key)
 
                 if name not in node.children:
-                    # print('CREATE {}'.format(name))
-                    n = node_catalog.get(name)
                     # only store hashes
                     node.children += [name]
                     node.dirty = True
@@ -71,6 +70,7 @@ def forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, 
             queue.put(r)
 
     return total
+
 
 def _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file):
     node_catalog = NodeCatalog(node_store, folder, root_aabb, root_spacing, True)
@@ -156,6 +156,7 @@ def _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue
 
     return (total, total_queued)
 
+
 def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbose):
     try:
         # print(">> CAS 2: {}".format(memory_usage(proc=os.getpid())))
@@ -169,9 +170,6 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
 
         total_queued = 0
         total = 0
-
-        to_save = []
-
 
         # use threads as a workaround to GIL
         if len(work) > 1:
@@ -193,7 +191,6 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
                 total += result[0]
                 total_queued += result[1]
 
-
         if log_enabled:
             print('[<] return result [{} sec, {} MB] [{}]'.format(
                 round(time.time() - begin, 2),
@@ -211,6 +208,5 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
             print(e)
         if log_enabled or True:
             traceback.print_exc()
-
 
     return 0

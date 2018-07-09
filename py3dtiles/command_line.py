@@ -8,28 +8,21 @@ import numpy as np
 from laspy.file import File
 import json
 from memory_profiler import memory_usage
-import tempfile
-import time
 import random
 import math
-import threading
 import pickle
-import gc
 import py3dtiles
-import logging
 import gzip
-import lzma
 import concurrent.futures
 import liblas
 import pyproj
-
 from .points.transformations import rotation_matrix, angle_between_vectors, vector_product, inverse_matrix, scale_matrix, translation_matrix
 from .points.utils import name_to_filename, compute_spacing
 from .points.las_splitter import process_root_node
 from .points.node_process import process_node
-from .points.node_catalog import NodeCatalog
 from .points.node import Node
 from .points.shared_node_store import SharedNodeStore
+
 
 # https://stackoverflow.com/a/43357954
 def str2bool(v):
@@ -39,6 +32,7 @@ def str2bool(v):
         return False
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
+
 
 class DummyNode():
     def __init__(self, _bytes):
@@ -77,6 +71,7 @@ def bytes_to_pnts(name, b, out_folder):
 
     return count
 
+
 def temp_file_to_pnts(filename, out_folder):
     count = 0
 
@@ -90,12 +85,11 @@ def temp_file_to_pnts(filename, out_folder):
 
     return count
 
+
 def write_3dtiles(node_store, in_folder, out_folder, level_range, verbose):
     start = time.time()
     if verbose >= 1:
         print('>>>>>>>>>>>>>>>>>>>> write_3dtiles {}'.format(level_range))
-    # dump_levels_on_disk(cache, in_folder, level_range, verbose)
-
 
     pool = concurrent.futures.ProcessPoolExecutor()
     jobs = []
@@ -137,21 +131,14 @@ def write_tileset(in_folder, out_folder, root_aabb, offset, scale, projection, r
     root_tileset['refine'] = 'ADD'
 
     tileset = {
-        'asset': {'version' : '1.0'},
-        'geometricError': np.linalg.norm(root_aabb[1] - root_aabb[0]) / scale[0],
-        'root' : root_tileset
+        'asset': {'version': '1.0'},
+        'geometricError': np.linalg.norm(
+            root_aabb[1] - root_aabb[0]) / scale[0],
+        'root': root_tileset
     }
 
     with open('{}/tileset.json'.format(out_folder), 'w') as f:
         f.write(json.dumps(tileset))
-
-_2_elements_tuple_size = sys.getsizeof((1, 1))
-def cache_entry_size(k, v):
-    # 2 dict = 2 keys + the content of each dict
-    return 2 * sys.getsizeof(k) + \
-        sys.getsizeof(v) + sys.getsizeof(v[0]) + sys.getsizeof(v[1]) + sys.getsizeof(v[2]) + \
-        _2_elements_tuple_size + v[1]
-
 
 
 def keep_cache_size_under_control(cache, pid, working_dir, max_size_MB, verbose):
@@ -179,6 +166,7 @@ def keep_cache_size_under_control(cache, pid, working_dir, max_size_MB, verbose)
                 memory_usage(proc=pid)[0],
                 dropped))
 
+
 def make_rotation_matrix(z1, z2):
     v0 = z1 / np.linalg.norm(z1)
     v1 = z2 / np.linalg.norm(z2)
@@ -186,6 +174,7 @@ def make_rotation_matrix(z1, z2):
     return rotation_matrix(
         angle_between_vectors(v0, v1),
         vector_product(v0, v1))
+
 
 def main():
     parser = argparse.ArgumentParser(description='Foobar.')

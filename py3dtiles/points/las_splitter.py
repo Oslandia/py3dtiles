@@ -1,13 +1,11 @@
 import numpy as np
-import os
 import time
 import math
 import traceback
 import laspy
 import pyproj
-from memory_profiler import memory_usage
-
 from .node import Node
+
 
 def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, portion, queue, projection, verbose):
     '''
@@ -21,9 +19,8 @@ def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, p
 
         point_count = portion[1] - portion[0]
 
-        step = min(point_count,
-            max((point_count) // 10, 100000))
-        # step = point_count
+        step = min(point_count, max((point_count) // 10, 100000))
+
         indices = [i for i in range(math.ceil((point_count) / step))]
 
         root = Node('', root_aabb, root_spacing)
@@ -47,14 +44,9 @@ def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, p
             GREEN = (GREEN / 255).astype(np.uint8)
             BLUE = (BLUE / 255).astype(np.uint8)
 
-        start = time.perf_counter()
-
         for index in indices:
-            # print('{} %'.format(round(100 * indices.index(index) / len(indices), 1)))
             if root.children is None:
                 root.children = []
-
-            loop_start = time.perf_counter()
 
             start_offset = portion[0] + index * step
             num = min(step, portion[1] - start_offset)

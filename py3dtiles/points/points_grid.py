@@ -2,11 +2,13 @@ import numpy as np
 
 from .distance_test import is_point_far_enough, xyz_to_key
 
+
 def is_point_far_enough_py(points, tested_point, squared_min_distance):
     for pt in points:
         if np.sum((tested_point - pt)**2) < squared_min_distance:
             return False
     return True
+
 
 def are_point_far_enough(points, tested, index, dist):
     in_progress = []
@@ -21,8 +23,10 @@ def are_point_far_enough(points, tested, index, dist):
 
     return result
 
+
 class CellNumpy(object):
     """docstring for CellNumpy"""
+
     def __init__(self, spacing):
         super(CellNumpy, self).__init__()
         self.sq_spacing = spacing * spacing
@@ -64,12 +68,14 @@ class CellNumpy(object):
             self.storage[0] = np.resize(self.storage[0], new_shape)
             self.storage[1] = np.resize(self.storage[1], new_shape)
 
-        self.storage[0][self.count:self.count+len(xyz)] = xyz
-        self.storage[1][self.count:self.count+len(xyz)] = rgb
+        self.storage[0][self.count:self.count + len(xyz)] = xyz
+        self.storage[1][self.count:self.count + len(xyz)] = rgb
         self.count += len(xyz)
+
 
 class Grid(object):
     """docstring for Grid"""
+
     def __init__(self, node):
         super(Grid, self).__init__()
         self.cell_size = np.floor((node.aabb[1] - node.aabb[0]) / (node.spacing * 5.0)).astype(np.float32)
