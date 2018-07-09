@@ -6,7 +6,7 @@ import pyproj
 from .node import Node
 
 
-def process_root_node(filename, root_aabb, root_spacing, offset_scale, portion, queue, projection, verbose):
+def process_root_node(filename, octree_metadata, offset_scale, portion, queue, projection, verbose):
     '''
     Reads points from a las file, and either:
       - assign them to the root node of the octree
@@ -22,7 +22,7 @@ def process_root_node(filename, root_aabb, root_spacing, offset_scale, portion, 
 
         indices = [i for i in range(math.ceil((point_count) / step))]
 
-        root = Node('', root_aabb, root_spacing)
+        root = Node('', octree_metadata.aabb, octree_metadata.spacing)
 
         file_points = f.get_points()['point']
         X = file_points['X']

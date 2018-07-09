@@ -8,6 +8,7 @@ import numpy as np
 from laspy.file import File
 import json
 from memory_profiler import memory_usage
+from collections import namedtuple
 import random
 import math
 import pickle
@@ -116,7 +117,7 @@ def write_3dtiles(node_store, in_folder, out_folder, level_range, verbose):
             round(time.time() - middle, 3)))
     return count
 
-def write_tileset(in_folder, out_folder, root_aabb, offset, scale, projection, rotation_matrix):
+def write_tileset(in_folder, out_folder, octree_metadata, offset, scale, projection, rotation_matrix):
     # compute tile transform matrix
     if rotation_matrix is None:
         transform = np.identity(4)
@@ -125,7 +126,7 @@ def write_tileset(in_folder, out_folder, root_aabb, offset, scale, projection, r
     transform = np.dot(transform, scale_matrix(1.0 / scale[0]))
     transform = np.dot(translation_matrix(offset), transform)
 
-    root_tileset = Node.to_tileset('', root_aabb, compute_spacing(root_aabb), out_folder, scale)
+    root_tileset = Node.to_tileset('', octree_metadata.aabb, octree_metadata.spacing, out_folder, scale)
 
     root_tileset['transform'] = transform.T.reshape(16).tolist()
     root_tileset['refine'] = 'ADD'
@@ -133,7 +134,7 @@ def write_tileset(in_folder, out_folder, root_aabb, offset, scale, projection, r
     tileset = {
         'asset': {'version': '1.0'},
         'geometricError': np.linalg.norm(
-            root_aabb[1] - root_aabb[0]) / scale[0],
+            octree_metadata.aabb[1] - octree_metadata.aabb[0]) / scale[0],
         'root': root_tileset
     }
 
@@ -175,6 +176,7 @@ def make_rotation_matrix(z1, z2):
         angle_between_vectors(v0, v1),
         vector_product(v0, v1))
 
+OctreeMetadata = namedtuple('OctreeMetadata', ['aabb', 'spacing'])
 
 def main():
     parser = argparse.ArgumentParser(description='Foobar.')
@@ -308,6 +310,8 @@ Error.
     root_aabb = root_aabb * root_scale
     root_spacing = compute_spacing(root_aabb)
 
+    octree_metadata = OctreeMetadata(aabb=root_aabb, spacing=root_spacing)
+
     if args.verbose >= 1:
         print('Summary:')
         print('  - points to process: {}'.format(total_point_count))
@@ -429,8 +433,7 @@ Error.
                     node_store,
                     todo,
                     working_dir,
-                    root_aabb,
-                    root_spacing,
+                    octree_metadata,
                     queue,
                     args.verbose)
 
@@ -457,8 +460,7 @@ Error.
                 pointcloud_file_splitting_result += [(executor.submit(
                     process_root_node,
                     file,
-                    root_aabb,
-                    root_spacing,
+                    octree_metadata,
                     (-avg_min, root_scale, rotation_matrix[:3,:3].T if rotation_matrix is not None else None),
                     portion,
                     queue,
@@ -501,7 +503,7 @@ Error.
                         print('Writing 3dtiles {}'.format(avg_min))
                     p = multiprocessing.Process(
                         target=write_tileset,
-                        args=(working_dir, folder, root_aabb, avg_min, root_scale, projection, rotation_matrix))
+                        args=(working_dir, folder, octree_metadata, avg_min, root_scale, projection, rotation_matrix))
                     p.start()
                     p.join()
                     shutil.rmtree(working_dir)

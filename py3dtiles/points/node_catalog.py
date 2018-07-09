@@ -9,13 +9,13 @@ from .node import Node
 
 class NodeCatalog:
     """docstring for NodeCatalog"""
-    def __init__(self, node_store, folder, root_aabb, root_spacing, auto_init):
+    def __init__(self, node_store, folder, octree_metadata, auto_init):
         super(NodeCatalog, self).__init__()
         self.node_store = node_store
         self.nodes = {}
         self.folder = folder
-        self.root_aabb = root_aabb
-        self.root_spacing = root_spacing
+        self.root_aabb = octree_metadata.aabb
+        self.root_spacing = octree_metadata.spacing
         self.auto_init = auto_init
         self.node_bytes = {}
 

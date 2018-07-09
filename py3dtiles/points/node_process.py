@@ -72,8 +72,8 @@ def forward_unassigned_points(node_catalog, name, halt_at_depth, queue, begin, l
     return total
 
 
-def _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file):
-    node_catalog = NodeCatalog(node_store, folder, root_aabb, root_spacing, True)
+def _process(node_store, folder, octree_metadata, name, filenames, queue, begin, log_file):
+    node_catalog = NodeCatalog(node_store, folder, octree_metadata, True)
     node_catalog.init(name)
 
     log_enabled = log_file is not None
@@ -157,7 +157,7 @@ def _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue
     return (total, total_queued)
 
 
-def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbose):
+def process_node(node_store, work, folder, octree_metadata, queue, verbose):
     try:
         # print(">> CAS 2: {}".format(memory_usage(proc=os.getpid())))
         begin = time.time()
@@ -177,7 +177,7 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
             jobs = []
             for name, filenames in work:
                 jobs += [pool.submit(_process,
-                    node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file)]
+                    node_store, folder, octree_metadata, name, filenames, queue, begin, log_file)]
 
             pool.shutdown()
 
@@ -187,7 +187,7 @@ def process_node(node_store, work, folder, root_aabb, root_spacing, queue, verbo
                 total_queued += result[1]
         else:
             for name, filenames in work:
-                result = _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue, begin, log_file)
+                result = _process(node_store, folder, octree_metadata, name, filenames, queue, begin, log_file)
                 total += result[0]
                 total_queued += result[1]
 
