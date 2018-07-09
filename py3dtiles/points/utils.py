@@ -22,7 +22,7 @@ def name_to_filename(working_dir, name, suffix = ''):
     return filename
 
 def compute_spacing(aabb):
-    return float(np.linalg.norm(aabb[1] - aabb[0]) / 250)
+    return float(np.linalg.norm(aabb[1] - aabb[0]) / 125)
 
 def aabb_size_to_subdivision_type(size):
     if size[2] / min(size[0], size[1]) < 0.5:
