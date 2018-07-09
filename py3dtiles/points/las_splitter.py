@@ -1,5 +1,4 @@
 import numpy as np
-import time
 import math
 import traceback
 import laspy
@@ -7,7 +6,7 @@ import pyproj
 from .node import Node
 
 
-def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, portion, queue, projection, verbose):
+def process_root_node(filename, root_aabb, root_spacing, offset_scale, portion, queue, projection, verbose):
     '''
     Reads points from a las file, and either:
       - assign them to the root node of the octree
@@ -88,7 +87,7 @@ def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, p
             #   - create children (so when we serialize root, we'll remember that we have children)
             #   - clear pending
             #   - write .npz files, named after the child they belong to
-            result = root.write_pending_to_disk(folder, None, False, 0)
+            result = root.pending_to_bytes(None, 0)
 
             for r in result:
                 queue.put(r)

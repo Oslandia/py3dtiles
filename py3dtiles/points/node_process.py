@@ -57,10 +57,10 @@ def flush(node, node_catalog, max_depth=1, depth=0):
             flush(node_catalog.get(name), node_catalog, max_depth, depth + 1)
 
 
-def forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file):
+def forward_unassigned_points(node_catalog, name, halt_at_depth, queue, begin, log_file):
     total = 0
 
-    result = node_catalog.get(name).write_pending_to_disk(folder, node_catalog, False, halt_at_depth - 1)
+    result = node_catalog.get(name).pending_to_bytes(node_catalog, halt_at_depth - 1)
 
     for r in result:
         if len(r) > 0:
@@ -136,12 +136,12 @@ def _process(node_store, folder, root_aabb, root_spacing, name, filenames, queue
 
         if batch > 200000:
             # print('batch {}'.format(name))
-            written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
+            written = forward_unassigned_points(node_catalog, name, halt_at_depth, queue, begin, log_file)
             total -= written
             total_queued += written
             batch = 0
 
-    written = forward_unassigned_points(node_catalog, folder, name, halt_at_depth, queue, begin, log_file)
+    written = forward_unassigned_points(node_catalog, name, halt_at_depth, queue, begin, log_file)
     total -= written
     total_queued += written
 

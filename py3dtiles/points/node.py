@@ -80,7 +80,7 @@ class Node(object):
             self.pending_xyz += [reminder[0]]
             self.pending_rgb += [reminder[1]]
 
-    def write_pending_to_disk(self, folder, node_catalog, write_on_disk, max_depth, depth=0):
+    def pending_to_bytes(self, node_catalog, max_depth, depth=0):
         result = []
 
         if len(self.pending_xyz) > 0:
@@ -121,13 +121,7 @@ class Node(object):
 
                     d = pickle.dumps({'xyz': xyz, 'rgb': rgb})
 
-                    if write_on_disk:
-                        filename = '{}/{}.{}.npz'.format(folder, name, uuid.uuid4())
-                        with open(filename, 'wb') as f:
-                            f.write(d)
-                        result += [(name, filename, len(xyz))]
-                    else:
-                        result += [(name, d, len(xyz))]
+                    result += [(name, d, len(xyz))]
 
             self.pending_xyz = []
             self.pending_rgb = []
@@ -135,10 +129,8 @@ class Node(object):
         elif self.children is not None and depth < max_depth:
             # then flush children
             for name in self.children:
-                result += node_catalog.get(name).write_pending_to_disk(
-                    folder,
+                result += node_catalog.get(name).pending_to_bytes(
                     node_catalog,
-                    write_on_disk,
                     max_depth,
                     depth + 1)
 

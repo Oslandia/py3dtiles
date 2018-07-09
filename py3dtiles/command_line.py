@@ -456,7 +456,6 @@ Error.
                 points_in_progress += portion[1] - portion[0]
                 pointcloud_file_splitting_result += [(executor.submit(
                     process_root_node,
-                    working_dir,
                     file,
                     root_aabb,
                     root_spacing,
