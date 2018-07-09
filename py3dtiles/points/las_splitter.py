@@ -42,6 +42,11 @@ def process_root_node(folder, filename, root_aabb, root_spacing, offset_scale, p
             GREEN = file_points['intensity']
             BLUE = file_points['intensity']
 
+        if np.max(RED) > 255:
+            RED = (RED / 255).astype(np.uint8)
+            GREEN = (GREEN / 255).astype(np.uint8)
+            BLUE = (BLUE / 255).astype(np.uint8)
+
         start = time.perf_counter()
 
         for index in indices:
