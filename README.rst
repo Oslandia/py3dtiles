@@ -213,6 +213,38 @@ corresponding data type.
 
 The py3dtiles command allows to convert one or several .las files to a single tileset.
 
+.. code-block:: shell
+
+    py3dtiles -h
+    usage: py3dtiles [-h] [--out OUT] [--overwrite OVERWRITE] [--jobs JOBS]
+                     [--cache_size CACHE_SIZE] [--srs_out SRS_OUT]
+                     [--srs_in SRS_IN] [--fraction FRACTION] [--verbose VERBOSE]
+                     [--benchmark BENCHMARK]
+                     files [files ...]
+    Convert .las files to a 3dtiles tileset.
+    positional arguments:
+      files                 Filenames to process. The file must use the .las
+                            format.
+    optional arguments:
+      -h, --help            show this help message and exit
+      --out OUT             The folder where the resulting tileset will be
+                            written. (default: ./3dtiles)
+      --overwrite OVERWRITE
+                            Overwrite the ouput folder if it already exists.
+                            (default: False)
+      --jobs JOBS           The number of parallel jobs to start. (default: 16)
+      --cache_size CACHE_SIZE
+                            Cache size in MB (default: 3219)
+      --srs_out SRS_OUT     SRS to use as output (EPSG code) (default: None)
+      --srs_in SRS_IN       Override input SRS (EPSG code) (default: None)
+      --fraction FRACTION   Percentage of the pointcloud to process. (default:
+                            100)
+      --verbose VERBOSE     Print logs (-1: no logs at all, 0: progress indicator,
+                            1 and 2: increased verbosity) (default: 0)
+      --benchmark BENCHMARK
+                            Print summary at the end of the process (default:
+                            None)
+
 
 Batched 3D Model
 ~~~~~~~~~~~~~~~~
