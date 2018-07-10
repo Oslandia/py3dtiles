@@ -24,12 +24,26 @@ To use py3dtiles from sources:
 
 .. code-block:: shell
 
+    $ apt install git python3 python3-pip virtualenv libopenblas-base liblas-c3
     $ git clone https://github.com/Oslandia/py3dtiles
     $ cd py3dtiles
     $ virtualenv -p /usr/bin/python3 venv
     $ . venv/bin/activate
     (venv)$ pip install -e .
     (venv)$ python setup.py install
+
+
+If you want to install pythran to fasten computations:
+
+.. code-block:: shell
+
+    (venv)$ pip install pythran
+    $ cd py3dtiles
+    $ . venv/bin/activate
+    (venv)$ py3dtiles/points
+    (venv)$ pythran -Ofast -march=native -ffast-math distance_test.py
+
+If you get an error UnicodeDecodeError during pythran install, it's probably a locale issue. Make sure you use a valid locale before install pythran (eg: export LANG=en_US.utf8).
 
 If you wan to run unit tests:
 
@@ -194,6 +208,10 @@ corresponding data type.
     >>>
     >>> # to save our tile as a .pnts file
     >>> t.save_as("mypoints.pnts")
+
+** How to convert .las files to 3dtiles**
+
+The py3dtiles command allows to convert one or several .las files to a single tileset.
 
 
 Batched 3D Model

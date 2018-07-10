@@ -179,16 +179,16 @@ def make_rotation_matrix(z1, z2):
 OctreeMetadata = namedtuple('OctreeMetadata', ['aabb', 'spacing'])
 
 def main():
-    parser = argparse.ArgumentParser(description='Foobar.')
-    parser.add_argument('files', nargs='+', help='filenames to process')
-    parser.add_argument('--out', dest='out', type=str, help='outfolder')
-    parser.add_argument('--overwrite', dest='overwrite', help='erase out folder if existing', default=False, type=str2bool)
-    parser.add_argument('--jobs', dest='jobs', help='parallel jobs', default=1, type=int)
-    parser.add_argument('--fraction', dest='fraction', help='\% of the pointcloud to process', default=100, type=int)
-    parser.add_argument('--verbose', dest='verbose', help='Print logs', default=1, type=int)
+    parser = argparse.ArgumentParser(description='Convert .las files to a 3dtiles tileset.')
+    parser.add_argument('files', nargs='+', help='Filenames to process. The file must use the .las format.')
+    parser.add_argument('--out', dest='out', type=str, help='The folder where the resulting tileset will be written.')
+    parser.add_argument('--overwrite', dest='overwrite', help='Overwrite the ouput folder if it already exists.', default=False, type=str2bool)
+    parser.add_argument('--jobs', dest='jobs', help='The number of parallel jobs to start.', default=1, type=int)
     parser.add_argument('--cache_size', dest='cache_size', help='Cache size in MB', default=1000, type=int)
     parser.add_argument('--srs_out', help='SRS to use as output (EPSG code)', type=str)
     parser.add_argument('--srs_in', help='Override input SRS (EPSG code)', type=str)
+    parser.add_argument('--fraction', dest='fraction', help='Percentage of the pointcloud to process.', default=100, type=int)
+    parser.add_argument('--verbose', dest='verbose', help='Print logs (-1: no logs at all, 0: progress indicator, 1 and 2: increased verbosity)', default=1, type=int)
     parser.add_argument('--benchmark', help='Print summary at the end of the process', type=str)
 
     args = parser.parse_args()
