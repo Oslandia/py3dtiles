@@ -139,6 +139,9 @@ def write_tileset(in_folder, out_folder, octree_metadata, offset, scale, project
         'root': root_tileset
     }
 
+    if projection is None:
+        tileset['asset']['gltfUpAxis'] = 'Z'
+
     with open('{}/tileset.json'.format(out_folder), 'w') as f:
         f.write(json.dumps(tileset))
 
