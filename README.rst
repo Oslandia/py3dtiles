@@ -65,7 +65,7 @@ If you want to install pythran to fasten computations:
 
 If you get an error UnicodeDecodeError during pythran install, it's probably a locale issue. Make sure you use a valid locale before install pythran (eg: export LANG=en_US.utf8).
 
-If you wan to run unit tests:
+If you want to run unit tests:
 
 .. code-block:: shell
 
