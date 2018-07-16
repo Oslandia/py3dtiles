@@ -17,6 +17,26 @@ py3dtiles is distributed under LGPL2 or later.
 Install
 -------
 
+From Docker
+~~~~~~~~~~~~
+
+To use py3dtiles in a docker container:
+
+- Build the docker image:
+
+    .. code-block:: shell
+
+        $ git clone https://github.com/Oslandia/py3dtiles
+        $ docker built -t py3dtiles .
+
+- Use it:
+
+    .. code-block:: shell
+
+        $ docker run -it --rm -v ${PWD}/data:/data py3dtiles py3dtiles --overwrite True --out /data/output /data/input.las
+        $ docker run -it --rm -v ${PWD}/data:/data py3dtiles py3dtiles_info /data/output/r2.pnts
+
+
 From sources
 ~~~~~~~~~~~~
 
