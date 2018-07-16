@@ -209,7 +209,7 @@ corresponding data type.
     >>> # to save our tile as a .pnts file
     >>> t.save_as("mypoints.pnts")
 
-** How to convert .las files to 3dtiles**
+**How to convert .las files to 3dtiles?**
 
 The py3dtiles command allows to convert one or several .las files to a single tileset.
 
