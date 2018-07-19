@@ -27,6 +27,7 @@ To use py3dtiles in a docker container:
     .. code-block:: shell
 
         $ git clone https://github.com/Oslandia/py3dtiles
+        $ cd py3dtiles
         $ docker build -t py3dtiles .
 
 - Use it:
