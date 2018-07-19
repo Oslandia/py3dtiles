@@ -2,6 +2,8 @@
 import os
 import re
 from setuptools import setup, find_packages
+from distutils.core import Extension
+from pythran import PythranExtension
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -69,6 +71,7 @@ setup(
         'Programming Language :: Python :: 3.5',
     ],
     packages=find_packages(),
+    ext_modules=[PythranExtension('py3dtiles.points.distance_test', sources=['py3dtiles/points/distance_test.py'])],
     install_requires=requirements,
     test_suite="tests",
     scripts=["tools/py3dtiles_info", "tools/export_tileset"],
