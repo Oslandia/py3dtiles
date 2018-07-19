@@ -18,10 +18,11 @@ ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
 RUN pip3 install -e .
-RUN python3 setup.py install
-RUN pip3 install pythran
 
 # Tweak for faster computation
-RUN pythran -Ofast -march=native -ffast-math /py3dtiles/py3dtiles/points/distance_test.py
+RUN pip3 install pythran
+RUN cd py3dtiles/points && pythran -Ofast -march=native -ffast-math distance_test.py
+
+RUN python3 setup.py install
 
 CMD ["py3dtiles", "-h" ]
