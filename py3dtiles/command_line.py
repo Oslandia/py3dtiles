@@ -232,6 +232,10 @@ def main():
 
     folder = args.out
 
+    executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs)
+    # start all process before allocating any memory
+    executor._adjust_process_count()
+
     # create folder
     if os.path.isdir(folder):
         if args.overwrite:
@@ -272,6 +276,7 @@ Error.
     total_point_count = 0
     pointcloud_file_portions = []
     avg_min = np.array([0., 0., 0.])
+    color_scale = None
     for filename in args.files:
         f = File(filename, mode='r')
         avg_min += (np.array(f.header.min) / len(args.files))
@@ -285,6 +290,16 @@ Error.
 
         count = int(f.header.count * args.fraction / 100)
         total_point_count += count
+
+        # read the first points red channel
+        if color_scale is None:
+            if 'red' in f.point_format.lookup:
+                color_test_field = 'red'
+            else:
+                color_test_field = 'intensity'
+
+            if np.max(f.get_points()['point'][color_test_field][0:min(10000, f.header.count)]) > 255:
+                    color_scale = 1.0 / 255
 
         _1M = min(count, 1000000)
         steps = math.ceil(count / _1M)
@@ -359,8 +374,6 @@ Error.
 
     startup = time.time()
 
-    executor = concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs)
-
     queue = manager.Queue()
 
     initial_portion_count = len(pointcloud_file_portions)
@@ -389,6 +402,8 @@ Error.
     written_until_level = -1
     points_in_pnts = 0
     active_jobs = {}
+
+    max_splitting_jobs_count = max(1, args.jobs // 2)
 
     cache_mgmt = multiprocessing.Process(target=keep_cache_size_under_control, args=(node_store, manager._process.pid, working_dir, args.cache_size, args.verbose))
     cache_mgmt.start()
@@ -486,7 +501,8 @@ Error.
 
         # print([p[0][0] for p in potential])
         # Continue processing the original file
-        if can_queue_more_jobs(active_jobs, pointcloud_file_splitting_result): # and not pointcloud_file_splitting_result:
+        if (can_queue_more_jobs(active_jobs, pointcloud_file_splitting_result) and
+           len(pointcloud_file_splitting_result) < max_splitting_jobs_count):
             # Keep active jobs
             if (pointcloud_file_portions and
                     points_in_progress < 60000000):
@@ -498,7 +514,7 @@ Error.
                     process_root_node,
                     file,
                     octree_metadata,
-                    (-avg_min, root_scale, rotation_matrix[:3,:3].T if rotation_matrix is not None else None),
+                    (-avg_min, root_scale, rotation_matrix[:3,:3].T if rotation_matrix is not None else None, color_scale),
                     portion,
                     queue,
                     projection,

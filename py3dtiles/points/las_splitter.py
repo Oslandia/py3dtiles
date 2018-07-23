@@ -5,7 +5,6 @@ import laspy
 import pyproj
 from .node import Node
 
-
 def process_root_node(filename, octree_metadata, offset_scale, portion, queue, projection, verbose):
     '''
     Reads points from a las file, and either:
@@ -24,6 +23,8 @@ def process_root_node(filename, octree_metadata, offset_scale, portion, queue, p
 
         root = Node('', octree_metadata.aabb, octree_metadata.spacing)
 
+        color_scale = offset_scale[3]
+
         file_points = f.get_points()['point']
         X = file_points['X']
         Y = file_points['Y']
@@ -37,11 +38,6 @@ def process_root_node(filename, octree_metadata, offset_scale, portion, queue, p
             RED = file_points['intensity']
             GREEN = file_points['intensity']
             BLUE = file_points['intensity']
-
-        if np.max(RED) > 255:
-            RED = (RED / 255).astype(np.uint8)
-            GREEN = (GREEN / 255).astype(np.uint8)
-            BLUE = (BLUE / 255).astype(np.uint8)
 
         for index in indices:
             if root.children is None:
@@ -77,6 +73,16 @@ def process_root_node(filename, octree_metadata, offset_scale, portion, queue, p
             red = RED[start_offset:start_offset + num]
             green = GREEN[start_offset:start_offset + num]
             blue = BLUE[start_offset:start_offset + num]
+
+            if color_scale is None:
+                red = red.astype(np.uint8)
+                green = green.astype(np.uint8)
+                blue = blue.astype(np.uint8)
+            else:
+                red = (red * color_scale).astype(np.uint8)
+                green = (green * color_scale).astype(np.uint8)
+                blue = (blue * color_scale).astype(np.uint8)
+
             colors = np.vstack((red, green, blue)).transpose()
             # insert in level 0 node:
             #   - children are not created
