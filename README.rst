@@ -17,6 +17,27 @@ py3dtiles is distributed under LGPL2 or later.
 Install
 -------
 
+From Docker
+~~~~~~~~~~~~
+
+To use py3dtiles in a docker container:
+
+- Build the docker image:
+
+    .. code-block:: shell
+
+        $ git clone https://github.com/Oslandia/py3dtiles
+        $ cd py3dtiles
+        $ docker build -t py3dtiles .
+
+- Use it:
+
+    .. code-block:: shell
+
+        $ docker run -it --rm -v ${PWD}/data:/data py3dtiles py3dtiles --overwrite True --out /data/output /data/input.las
+        $ docker run -it --rm -v ${PWD}/data:/data py3dtiles py3dtiles_info /data/output/r2.pnts
+
+
 From sources
 ~~~~~~~~~~~~
 
@@ -45,7 +66,7 @@ If you want to install pythran to fasten computations:
 
 If you get an error UnicodeDecodeError during pythran install, it's probably a locale issue. Make sure you use a valid locale before install pythran (eg: export LANG=en_US.utf8).
 
-If you wan to run unit tests:
+If you want to run unit tests:
 
 .. code-block:: shell
 

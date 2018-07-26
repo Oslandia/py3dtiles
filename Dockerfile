@@ -1,13 +1,19 @@
-FROM debian:buster-slim
+FROM ubuntu:18.04
 
-RUN apt-get update \
-    && apt-get install -y git libgmp-dev libatlas-base-dev liblas-dev liblas-c3 python3.6 python3.6-dev python3-pip python3-numpy\
+RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    libopenblas-base \
+    liblas-c3 \
     && rm -rf /var/lib/apt/lists/*
 
-RUN cd /opt \
-    && git clone https://github.com/Oslandia/py3dtiles.git \
-    && cd py3dtiles \
-    && git checkout lasTo3dtiles \
-    && pip3 install . \
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
 
-CMD ["/usr/local/bin/py3dtiles"]
+ADD . /py3dtiles
+WORKDIR py3dtiles
+
+RUN pip3 install -r requirements.txt
+RUN python3 setup.py install
+
+CMD ["py3dtiles", "-h" ]
