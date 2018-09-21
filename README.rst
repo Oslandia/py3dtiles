@@ -47,6 +47,24 @@ If you wan to run unit tests:
     (venv)$ nosetests
     ...
 
+With docker
+~~~~~~~~~~~~
+
+Build the py3dtiles docker image:
+
+.. code-block:: shell
+
+    $ git clone https://github.com/Oslandia/py3dtiles
+    $ cd py3dtiles
+    $ docker build -t py3dtiles .
+
+Use the py3dtiles docker image :
+
+.. code-block:: shell
+    $ docker run -it --rm py3dtiles
+    $ docker run -it --rm py3dtiles py3dtiles --help
+    $ docker run -it --rm py3dtiles py3dtiles info... See Command line usage section
+
 
 Command line usage
 ------------------
