@@ -75,7 +75,7 @@ class B3dmHeader(TileHeader):
 
     def __init__(self):
         self.type = TileType.BATCHED3DMODEL
-        self.magic_value = "b3dm"
+        self.magic_value = b"b3dm"
         self.version = 1
         self.tile_byte_length = 0
         self.ft_json_byte_length = 0
@@ -85,7 +85,7 @@ class B3dmHeader(TileHeader):
         self.bt_length = 0  # number of models in the batch
 
     def to_array(self):
-        header_arr = np.fromstring(self.magic_value, np.uint8)
+        header_arr = np.frombuffer(self.magic_value, np.uint8)
 
         header_arr2 = np.array([self.version,
                                 self.tile_byte_length,
