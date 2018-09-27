@@ -43,8 +43,8 @@ If you wan to run unit tests:
 
 .. code-block:: shell
 
-    (venv)$ pip install nose
-    (venv)$ nosetests
+    (venv)$ pip install pytest pytest-benchmark
+    (venv)$ pytest
     ...
 
 

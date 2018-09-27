@@ -73,7 +73,7 @@ class PntsHeader(TileHeader):
 
     def __init__(self):
         self.type = TileType.POINTCLOUD
-        self.magic_value = "pnts"
+        self.magic_value = b"pnts"
         self.version = 1
         self.tile_byte_length = 0
         self.ft_json_byte_length = 0
@@ -82,7 +82,7 @@ class PntsHeader(TileHeader):
         self.bt_bin_byte_length = 0
 
     def to_array(self):
-        header_arr = np.fromstring(self.magic_value, np.uint8)
+        header_arr = np.frombuffer(self.magic_value, np.uint8)
 
         header_arr2 = np.array([self.version,
                                 self.tile_byte_length,

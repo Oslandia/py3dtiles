@@ -5,13 +5,17 @@ language: python
 python:
   - "3.5"
 
+before_install:
+  - sudo apt-get install -y liblas-c3 libopenblas-base
+
 install:
-  - pip install --upgrade setuptools
   - pip install -e .
-  - python setup.py install
+  - pip install pytest pytest-benchmark
 
 script:
-  - pip install flake8
-  - flake8 py3dtiles
-  - nosetests
-  - py3dtiles_info tests/pointCloudRGB.pnts
+  - pytest
+  - py3dtiles info tests/pointCloudRGB.pnts
+
+addons:
+  apt:
+    update: true
