@@ -1,4 +1,5 @@
 {
+  "_comment": "A simple 3DTiles tileset wrapping a point cloud",
   "asset": {
     "version": "0.0"
   },
