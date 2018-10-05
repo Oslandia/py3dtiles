@@ -83,5 +83,6 @@ setup(
     },
     entry_points={
         'console_scripts': ['py3dtiles=py3dtiles.command_line:main'],
-    }
+    },
+    zip_safe=False  # zip packaging conflicts with Numba cache (#25)
 )
