@@ -9,7 +9,7 @@ import json
 import os
 import errno
 import numpy as np
-from py3dtiles import TriangleSoup, GlTF, B3dm, BatchTable
+from py3dtiles import TriangleSoup, GlTF, B3dm, BatchTable, TileSet
 
 
 class BoundingBox():
@@ -60,12 +60,11 @@ class Node():
 
     def to_tileset(self, transform):
         self.compute_bbox()
-        tiles = {
-            "asset": {"version": "1.0"},
-            "geometricError": 500,  # TODO
-            "root": self.to_tileset_r(500)
-        }
-        tiles["root"]["transform"] = [round(float(e), 3) for e in transform]
+        tiles = TileSet()
+        error = 500   # TODO, shouldn't be hardwired
+        tiles.set_geometric_error(error)
+        tiles["root"].update(self.to_tileset_r(error))
+        tiles.set_transform(transform)
         return tiles
 
     def to_tileset_r(self, error):
@@ -109,6 +108,12 @@ def tile_extent(extent, size, i, j):
 
 # TODO: transform
 def arrays2tileset(positions, normals, bboxes, transform, ids=None):
+    """
+    :rtype: None, the tile-set is directly written on disk (in current
+            working directory)
+    :param ids: optional identifiers (not part of the core tile-set)
+                stored in a batch-table
+    """
     print("Creating tileset...")
     maxTileSize = 2000
     featuresPerTile = 20
@@ -139,7 +144,7 @@ def arrays2tileset(positions, normals, bboxes, transform, ids=None):
     extentY = yMax - yMin
 
     # Create quadtree
-    tree = Node()
+    treeRoot = Node()
     for i in range(0, int(math.ceil(extentX / maxTileSize))):
         for j in range(0, int(math.ceil(extentY / maxTileSize))):
             tile = tile_extent(extent, maxTileSize, i, j)
@@ -156,19 +161,22 @@ def arrays2tileset(positions, normals, bboxes, transform, ids=None):
 
             if len(geoms) > featuresPerTile:
                 node = Node(geoms[0:featuresPerTile])
-                tree.add(node)
+                treeRoot.add(node)
                 divide(tile, geoms[featuresPerTile:len(geoms)], i * 2,
                        j * 2, maxTileSize / 2., featuresPerTile, node)
             else:
                 node = Node(geoms)
-                tree.add(node)
+                treeRoot.add(node)
+
+    treeRoot.compute_bbox()
 
     # Export b3dm & tileset
-    tileset = tree.to_tileset(transform)
+    tileset = treeRoot.to_tileset(transform)
+    # FIXME: what is the node.id format argument for ?
     f = open("tileset.json".format(node.id), 'w')
     f.write(json.dumps(tileset))
     print("Creating tiles...")
-    nodes = tree.all_nodes()
+    nodes = treeRoot.all_nodes()
     identity = np.identity(4).flatten('F')
     try:
         os.makedirs("tiles")
