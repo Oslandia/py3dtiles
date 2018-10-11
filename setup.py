@@ -17,7 +17,8 @@ requirements = (
     'pyproj',
     'psutil',
     'lz4',
-    'pyzmq'
+    'pyzmq',
+    'jsonschema'
 )
 
 dev_requirements = (
