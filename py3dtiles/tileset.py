@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
+
 class TileSet:
+
     def __init__(self):
         self.asset = {"version": "1.0", "gltfUpAxis": "Z"}
         self.geometric_error = None
