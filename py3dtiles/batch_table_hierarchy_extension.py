@@ -60,6 +60,9 @@ class BatchTableHierarchy(object):
         self.hierarchy_root['parentCounts'].append(len(parent_indexes))
         self.hierarchy_root['parentIds'].extend(parent_indexes)
 
+    def get_extension_name(self):
+        return "3DTILES_batch_table_hierarchy extension"
+
     def to_json(self):
         # convert dict to json string
         return json.dumps(self.hierarchy_root, separators=(',', ':'))

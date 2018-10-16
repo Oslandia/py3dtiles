@@ -85,5 +85,10 @@ setup(
     entry_points={
         'console_scripts': ['py3dtiles=py3dtiles.command_line:main'],
     },
+    data_files=[('py3dtiles/jsonschemas',
+                   [ 'py3dtiles/jsonschemas/3DTILES_batch_table_hierarchy.json',
+                     'py3dtiles/jsonschemas/batchTable.schema.json',
+                     'py3dtiles/jsonschemas/extension.schema.json' ]
+                )], 
     zip_safe=False  # zip packaging conflicts with Numba cache (#25)
 )

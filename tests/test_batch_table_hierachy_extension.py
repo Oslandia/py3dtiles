@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from py3dtiles import ExtensionSet, TileSet, BatchTableHierarchy
+from py3dtiles import BatchTableHierarchy, ExtensionSet
+from tests.test_batch_table import Test_Batch
 import json
 import unittest
 
@@ -12,11 +13,18 @@ class Test_BatchTableHierarchy(unittest.TestCase):
 
     def setUp(self):
         self.extensions = ExtensionSet()
-        filename = 'py3dtiles/jsonschemas/3DTILES_batch_table_hierarchy.json'
+        file_name = 'py3dtiles/jsonschemas/3DTILES_batch_table_hierarchy.json'
         try:
-            self.extensions.append_extension_from_file(filename)
+            self.extensions.append_extension_from_file(file_name)
         except:
-            print(f'Unable to define extension {filename}')
+            print(f'Unable to define extension {file_name}')
+            self.fail()
+        # We also need the classic Batch Table
+        file_name = 'py3dtiles/jsonschemas/batchTable.schema.json'
+        try:
+            self.extensions.append_extension_from_file(file_name)
+        except:
+            print(f'Unable to define extension {file_name}')
             self.fail()
 
     def tearDown(self):
@@ -93,6 +101,23 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         json_reference.pop('_comment', None)  # Drop the pesky "comment" entry.
         if not json_bth.items() == json_reference.items():
             self.fail()
+
+    def unmature_test_plug_extension_into_simple_batch_table(self):
+        # it looks like the extensions entry within
+        #       py3dtiles/jsonschemas/batchTable.schema.json
+        # that points to a generic extension "extension.schema.json" is not
+        # used by the validator (renaming that entry or removing the
+        # "extension.schema.json" file doesn't change the behavior of the
+        # validator...
+        bt = Test_Batch.build_bt_sample()
+        bth = self.build_bth_sample()
+        bt.add_extension(bth)
+        string_json_extended_bt = bt.to_json()
+        json_extended_bt = json.loads(string_json_extended_bt)
+        print("aaaaaaaaaaaaaaaaaaaaaaa", string_json_extended_bt)
+        if not self.extensions.validate("Batch Table", json_extended_bt):
+           print('Invalid item')
+           self.fail()
 
 if __name__ == "__main__":
     unittest.main()

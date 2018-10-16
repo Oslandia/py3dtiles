@@ -34,14 +34,17 @@ class ExtensionSet:
         try:
             # In order to validate the schema itself we still need to
             # provide some dummy item
-            dummy_item = \
-            {
-               "classes" : [],
-                "instancesLength" : 0,
-                "classIds" : [],
-                "parentCounts" : [],
-                "parentIds" : []
-            }
+            if title == "3DTILES_batch_table_hierarchy extension":
+                dummy_item = \
+                {
+                   "classes" : [],
+                    "instancesLength" : 0,
+                    "classIds" : [],
+                    "parentCounts" : [],
+                    "parentIds" : []
+                }
+            elif title == "Batch Table":
+                dummy_item = { "ids":[1, 2] }
             jsonschema.Draft4Validator(schema).validate(dummy_item)
         except jsonschema.exceptions.SchemaError:
             print('Invalid schema')
@@ -85,6 +88,12 @@ class ExtensionSet:
             print(f'Invalid item for schema {title}')
             return False
         return True
+
+    @classmethod
+    def __contains__(cls, extension_name):
+        if extension_name in ExtensionSet.extensions:
+            return True
+        return False
 
     @classmethod
     def delete_extensions(cls):
