@@ -32,7 +32,7 @@ class GlTF(object):
 
         return np.concatenate((binaryHeader.view(np.uint8),
                                jsonChunkHeader.view(np.uint8),
-                               np.fromstring(scene, dtype=np.uint8),
+                               np.frombuffer(scene.encode('utf-8'), dtype=np.uint8),
                                binChunkHeader.view(np.uint8),
                                self.body,
                                padding))

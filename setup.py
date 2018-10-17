@@ -66,7 +66,7 @@ setup(
     url='https://github.com/Oslandia/py3dtiles',
     author='Oslandia',
     author_email='contact@oslandia.com',
-    license='LGPL2 or later',
+    license='Apache License Version 2.0',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
@@ -83,5 +83,6 @@ setup(
     },
     entry_points={
         'console_scripts': ['py3dtiles=py3dtiles.command_line:main'],
-    }
+    },
+    zip_safe=False  # zip packaging conflicts with Numba cache (#25)
 )
