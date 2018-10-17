@@ -23,3 +23,24 @@ If you wan to run unit tests:
     (venv)$ pip install pytest pytest-benchmark
     (venv)$ pytest
     ...
+
+With docker
+~~~~~~~~~~~~
+
+Build the py3dtiles docker image:
+
+.. code-block:: shell
+
+    $ git clone https://github.com/Oslandia/py3dtiles
+    $ cd py3dtiles
+    $ docker build -t py3dtiles .
+
+Then, you can use the py3dtiles docker image :
+
+.. code-block:: shell
+
+    $ docker run -it --rm py3dtiles
+    $ docker run -it --rm py3dtiles py3dtiles --help
+    $ docker run -it --rm py3dtiles py3dtiles info ... 
+
+Learn how to use the `command line interface <https://github.com/Oslandia/py3dtiles/blob/master/docs/cli.rst>`_.
