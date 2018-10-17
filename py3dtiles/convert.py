@@ -97,7 +97,7 @@ def zmq_process(activity_graph, projection, node_store, octree_metadata, folder,
 
     # Socket to receive messages on
     skt = context.socket(zmq.DEALER)
-    skt.connect('ipc:///tmp/py3dtiles1')
+    skt.connect('tcp://127.0.0.1:1234')
 
     startup_time = time.time()
     idle_time = 0
@@ -411,7 +411,7 @@ def main(args):
     context = zmq.Context()
 
     zmq_skt = context.socket(zmq.ROUTER)
-    zmq_skt.bind('ipc:///tmp/py3dtiles1')
+    zmq_skt.bind('tcp://127.0.0.1:1234')
 
     zmq_idle_clients = []
 
