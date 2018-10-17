@@ -1,8 +1,6 @@
-FROM ubuntu:18.04
+FROM python:3.6-stretch
 
 RUN apt-get update && apt-get install -y \
-    python3.7 \
-    python3-pip \
     libopenblas-base \
     liblas-c3 \
     && rm -rf /var/lib/apt/lists/*
