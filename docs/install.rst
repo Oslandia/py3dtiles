@@ -16,7 +16,7 @@ To use py3dtiles from sources:
     (venv)$ pip install -e .
     (venv)$ python setup.py install
 
-If you wan to run unit tests:
+If you want to run unit tests:
 
 .. code-block:: shell
 
