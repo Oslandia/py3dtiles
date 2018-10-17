@@ -208,7 +208,7 @@ class Node(object):
                     0, 0, half_size[2]]
             },
             # geometricError is in meter so cancel scale
-            'geometricError': 10 * node.spacing / scale[0],
+            'geometricError': 20 * node.spacing / scale[0],
         }
 
         children = []
