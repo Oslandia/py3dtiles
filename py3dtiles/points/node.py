@@ -236,7 +236,6 @@ class Node(object):
                 tile_root = {
                     'asset': {
                         'version': '1.0',
-                        'gltfUpAxis': 'Z',
                     },
                     'refine': 'ADD',
                     'geometricError': tile['geometricError'],

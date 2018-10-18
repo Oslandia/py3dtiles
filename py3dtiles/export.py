@@ -61,7 +61,7 @@ class Node():
     def to_tileset(self, transform):
         self.compute_bbox()
         tiles = {
-            "asset": {"version": "1.0", "gltfUpAxis": "Z"},
+            "asset": {"version": "1.0"},
             "geometricError": 500,  # TODO
             "root": self.to_tileset_r(500)
         }

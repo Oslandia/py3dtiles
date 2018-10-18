@@ -309,8 +309,7 @@ def main(args):
     result['transform'] = base_transform.T.reshape(16).tolist()
     tileset = {
         'asset': {
-            'version': '1.0',
-            'gltfUpAxis': 'Z',
+            'version': '1.0'
         },
         'refine': 'REPLACE',
         'geometricError': np.linalg.norm((aabb[1] - aabb[0])[0:3]),
@@ -319,7 +318,6 @@ def main(args):
 
     with open('{}/tileset.json'.format(args.folder), 'w') as f:
         json.dump(tileset, f)
-
 
 
 if __name__ == '__main__':
