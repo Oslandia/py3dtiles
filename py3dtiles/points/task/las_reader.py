@@ -57,13 +57,11 @@ def init(args):
         if (args.srs_out is not None and
                 input_srs is None):
             f = liblas.file.File(filename)
-            if f.header.srs.proj4 is not None:
+            if (f.header.srs.proj4 is not None and
+                f.header.srs.proj4 != ''):
                 input_srs = pyproj.Proj(f.header.srs.proj4)
             else:
-                print('''
-Error.
-{} file doesn\'t contain srs information. Please use the --srs_in option to declare it.
-                        '''.format(filename))
+                raise Exception('\'{}\' file doesn\'t contain srs information. Please use the --srs_in option to declare it.'.format(filename))
 
     return {
         'portions': pointcloud_file_portions,
