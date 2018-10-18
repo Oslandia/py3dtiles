@@ -15,20 +15,20 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         self.extensions = ExtensionSet()
         file_name = 'py3dtiles/jsonschemas/3DTILES_batch_table_hierarchy.json'
         try:
-            self.extensions.append_extension_from_file(file_name)
+            self.extensions.append_schema_from_file(file_name)
         except:
             print(f'Unable to define extension {file_name}')
             self.fail()
         # We also need the classic Batch Table
         file_name = 'py3dtiles/jsonschemas/batchTable.schema.json'
         try:
-            self.extensions.append_extension_from_file(file_name)
+            self.extensions.append_schema_from_file(file_name)
         except:
             print(f'Unable to define extension {file_name}')
             self.fail()
 
     def tearDown(self):
-        self.extensions.delete_extensions()
+        self.extensions.delete_schemas()
 
     def test_json_sample(self):
         try:
@@ -98,15 +98,15 @@ class Test_BatchTableHierarchy(unittest.TestCase):
 
         reference_file = 'tests/data/batch_table_hierarchy_reference_sample.json'
         json_reference = json.loads(open(reference_file, 'r').read())
-        json_reference.pop('_comment', None)  # Drop the pesky "comment" entry.
+        json_reference.pop('_comment', None)  # Drop the pesky "comment" header.
         if not json_bth.items() == json_reference.items():
             self.fail()
 
     def unmature_test_plug_extension_into_simple_batch_table(self):
-        # it looks like the extensions entry within
+        # it looks like the schemas header within
         #       py3dtiles/jsonschemas/batchTable.schema.json
         # that points to a generic extension "extension.schema.json" is not
-        # used by the validator (renaming that entry or removing the
+        # used by the validator (renaming that header or removing the
         # "extension.schema.json" file doesn't change the behavior of the
         # validator...
         bt = Test_Batch.build_bt_sample()

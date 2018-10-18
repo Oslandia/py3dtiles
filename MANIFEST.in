@@ -1,3 +1,2 @@
-recursive-include py3dtiles/*
-recursive-include tools/*
+recursive-include py3dtiles *
 include README.rst LICENSE

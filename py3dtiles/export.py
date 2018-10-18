@@ -63,7 +63,7 @@ class Node():
         tiles = TileSet()
         error = 500   # TODO, shouldn't be hardwired
         tiles.set_geometric_error(error)
-        tiles["root"].update(self.to_tileset_r(error))
+        tiles.header.root.update(self.to_tileset_r(error))
         tiles.set_transform(transform)
         return tiles
 
@@ -174,7 +174,7 @@ def arrays2tileset(positions, normals, bboxes, transform, ids=None):
     tileset = treeRoot.to_tileset(transform)
     # FIXME: what is the node.id format argument for ?
     f = open("tileset.json".format(node.id), 'w')
-    f.write(json.dumps(tileset))
+    f.write(tileset.to_json())
     print("Creating tiles...")
     nodes = treeRoot.all_nodes()
     identity = np.identity(4).flatten('F')

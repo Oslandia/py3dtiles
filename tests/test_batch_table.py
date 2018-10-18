@@ -11,13 +11,13 @@ class Test_Batch(unittest.TestCase):
         self.extensions = ExtensionSet()
         file_name = 'py3dtiles/jsonschemas/batchTable.schema.json'
         try:
-            self.extensions.append_extension_from_file(file_name)
+            self.extensions.append_schema_from_file(file_name)
         except:
             print(f'Unable to define extension {file_name}')
             self.fail()
 
     def tearDown(self):
-        self.extensions.delete_extensions()
+        self.extensions.delete_schemas()
 
     def test_load_reference_file(self):
         try:

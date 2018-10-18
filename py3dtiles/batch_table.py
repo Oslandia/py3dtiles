@@ -40,21 +40,21 @@ class BatchTable(object):
 
     def to_json(self):
         """
-        Convert to json string possibly including known extensions
+        Convert to json string possibly including known schemas
         """
         # We don't want to be intrusive on self.header in case the object
         # will be further modified. We hence (deep) copy it. Note that if
         # (when?) memory footprint becomes an issue, we could also
-        #   1. temporarily add an extensions key to self.header
-        #   2. paste the json.dumps of the existing (self.)extensions to that
-        #      extensions dictionary entry
+        #   1. temporarily add an schemas key to self.header
+        #   2. paste the json.dumps of the existing (self.)schemas to that
+        #      schemas dictionary header
         #   3. call json.dumps() on self.header
-        #   4. delete the temporary self.header['extensions'] in order to
+        #   4. delete the temporary self.header['schemas'] in order to
         #      retrieve the original self.header
         header = copy.deepcopy(self.header)
         if self.extensions:
-            header['extensions'] = dict()
+            header['schemas'] = dict()
             for extension in self.extensions:
-                header['extensions'][extension.get_extension_name()] = \
+                header['schemas'][extension.get_extension_name()] = \
                                       copy.deepcopy(extension.hierarchy_root)
         return json.dumps(header, separators=(',', ':'))

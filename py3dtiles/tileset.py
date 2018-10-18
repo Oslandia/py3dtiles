@@ -1,19 +1,32 @@
 # -*- coding: utf-8 -*-
 
+import sys
+import json
+from py3dtiles import ThreeDTilesNotion, TileForReal
 
-class TileSet:
+class TileSet(ThreeDTilesNotion):
 
     def __init__(self):
-        self.asset = {"version": "1.0", "gltfUpAxis": "Z"}
-        self.geometric_error = None
-        self.root = dict()
-
-    def set_transform(self, transform):
-        """
-        :param transform: a flattened transformation matrix
-        :return:
-        """
-        self["root"]["transform"] = [round(float(e), 3) for e in transform]
+        super().__init__()
+        self.header["asset"] = {"version": "1.0"}
+        self.header["geometricError"] = None
+        self.header["root"] = TileForReal()
 
     def set_geometric_error(self, error):
-        self.geometric_error = error
+        self.header["geometricError"] = error
+
+    def set_root_tile(self, root):
+        if self.header["root"]:
+            print("Warning: overwriting root tile.")
+        self.header["root"] = root
+
+    def to_json(self):
+        """
+        Convert to json string possibly mentioning used schemas
+        """
+        if not self.header["geometricError"]:
+            self.set_geometric_error(1000000.0) # FIXME: chose a decent default
+        if not self.header["root"]:
+            print("A TileSet must have a root entry")
+            sys.eti(1)
+        return json.dumps(self.header, separators=(',', ':'))

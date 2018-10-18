@@ -88,7 +88,13 @@ setup(
     data_files=[('py3dtiles/jsonschemas',
                    [ 'py3dtiles/jsonschemas/3DTILES_batch_table_hierarchy.json',
                      'py3dtiles/jsonschemas/batchTable.schema.json',
-                     'py3dtiles/jsonschemas/extension.schema.json' ]
+                     'py3dtiles/jsonschemas/boundingVolume.schema.json',
+                     'py3dtiles/jsonschemas/extension.schema.json',
+                     'py3dtiles/jsonschemas/extras.schema.json',
+                     'py3dtiles/jsonschemas/properties.schema.json',
+                     'py3dtiles/jsonschemas/tile.schema.json',
+                     'py3dtiles/jsonschemas/tile.content.schema.json',
+                     'py3dtiles/jsonschemas/tileset.schema.json' ]
                 )], 
     zip_safe=False  # zip packaging conflicts with Numba cache (#25)
 )

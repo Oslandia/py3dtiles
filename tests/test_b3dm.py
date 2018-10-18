@@ -6,8 +6,7 @@ import binascii
 import json
 # np.set_printoptions(formatter={'int':hex})
 
-from py3dtiles import TileReader, Tile, Feature, B3dm, GlTF, TriangleSoup
-
+from py3dtiles import TileReader, B3dm, GlTF, TriangleSoup
 
 class TestTileReader(unittest.TestCase):
 

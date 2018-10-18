@@ -18,7 +18,7 @@
                     "instances" : {
                         "type" : "object",
                         "additionalProperties" : {
-                            "$ref" : "#/definitions/property"
+                            "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/property"
                         }
                     }
                 },        
@@ -30,13 +30,13 @@
             "minimum" : 0
         },
         "classIds" : {
-            "$ref" : "#/definitions/integerProperty"
+            "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/integerProperty"
         },
         "parentCounts" : {
-            "$ref" : "#/definitions/integerProperty"
+            "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/integerProperty"
         },
         "parentIds" : {
-            "$ref" : "#/definitions/integerProperty"
+            "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/integerProperty"
         },
         "extensions" : {
             "$ref": "extension.schema.json"
@@ -66,7 +66,7 @@
         },
         "property" : {
             "anyOf" : [
-                { "$ref" : "#/definitions/binaryBodyReference" },
+                { "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/binaryBodyReference" },
                 { "type" : "array" }
             ]
         },
@@ -93,8 +93,8 @@
         },
         "integerProperty" : {
             "anyOf" : [
-                { "$ref" : "#/definitions/integerBinaryBodyReference" },
-                { "$ref" : "#/definitions/integerArray" }
+                { "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/integerBinaryBodyReference" },
+                { "$ref" : "3DTILES_batch_table_hierarchy.json#/definitions/integerArray" }
             ]
         }
     },
