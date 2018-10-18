@@ -213,7 +213,7 @@ class Node(object):
 
         children = []
         if os.path.exists(ondisk_tile):
-            tile['content'] = {'url': os.path.relpath(ondisk_tile, folder)}
+            tile['content'] = {'uri': os.path.relpath(ondisk_tile, folder)}
         for child in ['0', '1', '2', '3', '4', '5', '6', '7']:
             child_name = '{}{}'.format(name.decode('ascii'), child).encode('ascii')
             ondisk_tile = name_to_filename(folder, child_name, '.pnts')
@@ -244,7 +244,7 @@ class Node(object):
                 tileset_name = 'tileset.{}.json'.format(name.decode('ascii'))
                 with open('{}/{}'.format(folder, tileset_name), 'w') as f:
                     f.write(json.dumps(tile_root))
-                tile['content'] = {'url': tileset_name}
+                tile['content'] = {'uri': tileset_name}
                 tile['children'] = []
 
         return tile

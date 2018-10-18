@@ -85,7 +85,7 @@ class Node():
         }
         if len(self.features) != 0:
             tile["content"] = {
-                "url": "tiles/{0}.b3dm".format(self.id)
+                "uri": "tiles/{0}.b3dm".format(self.id)
             }
 
         return tile

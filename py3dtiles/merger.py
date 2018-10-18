@@ -14,7 +14,7 @@ def _get_root_tile(tileset, filename):
 
     pnts_filename = os.path.join(
         folder,
-        tileset['root']['content']['url'])
+        tileset['root']['content']['uri'])
 
     return TileReader().read_file(pnts_filename)
 
@@ -175,7 +175,7 @@ def build_tileset_quadtree(out_folder, aabb, tilesets, base_transform, inv_base_
             'geometricError': insides[0]['root']['geometricError'],
             'boundingVolume': _3dtiles_bounding_box_from_aabb(box),
             'content': {
-                'url': os.path.relpath(insides[0]['filename'], out_folder)
+                'uri': os.path.relpath(insides[0]['filename'], out_folder)
             }
         }
     else:
@@ -225,23 +225,23 @@ def build_tileset_quadtree(out_folder, aabb, tilesets, base_transform, inv_base_
             np.concatenate((xyz.view(np.uint8).ravel(), rgb.ravel())),
             out_folder,
             rgb.shape[0] > 0)[1]
-        result['content'] = { 'url': os.path.relpath(filename, out_folder) }
+        result['content'] = { 'uri': os.path.relpath(filename, out_folder) }
         result['geometricError'] = sum([t['root']['geometricError'] for t in insides])
         result['boundingVolume'] = _3dtiles_bounding_box_from_aabb(union_aabb, inv_base_transform)
 
         return result
 
 
-def extract_content_urls(tileset):
+def extract_content_uris(tileset):
     contents = []
     for key in tileset:
         if key == 'content':
-            contents += [tileset[key]['url']]
+            contents += [tileset[key]['uri']]
         elif key == 'children':
             for child in tileset['children']:
-                contents += extract_content_urls(child)
+                contents += extract_content_uris(child)
         elif key == 'root':
-            contents += extract_content_urls(tileset['root'])
+            contents += extract_content_uris(tileset['root'])
 
     return contents
 
@@ -250,7 +250,7 @@ def remove_tileset(tileset_filename):
     folder = os.path.dirname(tileset_filename)
     with open(tileset_filename, 'r') as f:
         tileset = json.load(f)
-    contents = extract_content_urls(tileset)
+    contents = extract_content_uris(tileset)
     for content in contents:
         ext = os.path.splitext(content)[1][1:]
         if ext == 'pnts':
