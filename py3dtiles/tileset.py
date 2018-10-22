@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import json
 from py3dtiles import ThreeDTilesNotion, TileForReal
 
 class TileSet(ThreeDTilesNotion):
@@ -20,7 +19,7 @@ class TileSet(ThreeDTilesNotion):
             print("Warning: overwriting root tile.")
         self.header["root"] = root
 
-    def to_json(self):
+    def prepare_for_json(self):
         """
         Convert to json string possibly mentioning used schemas
         """
@@ -28,5 +27,4 @@ class TileSet(ThreeDTilesNotion):
             self.set_geometric_error(1000000.0) # FIXME: chose a decent default
         if not self.header["root"]:
             print("A TileSet must have a root entry")
-            sys.eti(1)
-        return json.dumps(self.header, separators=(',', ':'))
+            sys.exit(1)

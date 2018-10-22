@@ -1,15 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from py3dtiles import BatchTableHierarchy, ExtensionSet
-from tests.test_batch_table import Test_Batch
 import json
 import unittest
+from py3dtiles import BatchTableHierarchy, ExtensionSet, HelperTest
+from tests.test_batch_table import Test_Batch
 
 
 class Test_BatchTableHierarchy(unittest.TestCase):
     """
     Batch Table Hierarchy (BTH) extension related tests
     """
+    def test_basics(self):
+        helper = HelperTest()
+        helper.sample_file_names.append(
+                              'batch_table_hierarchy_reference_sample.json')
+        helper.test_load_reference_files()
 
     def setUp(self):
         self.extensions = ExtensionSet()
@@ -74,6 +79,10 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         bth.add_class_instance("Owner", {'type': 'commercial', 'id': 6445})
         return bth
 
+    def test_json_encoding(self):
+        bth = self.build_bth_sample()     # A Batch Table Hierarchy instance
+        return bth.to_json()              # A JSON formatted string
+
     def test_bth_build_sample_and_validate(self):
         """
         Assert the build sample is valid against the BTH extension definition
@@ -92,8 +101,7 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         Build the sample, load the version from the reference file and
         compare them (in memory as opposed to "diffing" files)
         """
-        bth = self.build_bth_sample()
-        string_json_bth = bth.to_json()
+        string_json_bth = self.build_bth_sample().to_json()
         json_bth = json.loads(string_json_bth)
 
         reference_file = 'tests/data/batch_table_hierarchy_reference_sample.json'

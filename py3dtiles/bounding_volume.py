@@ -18,9 +18,9 @@ class BoundingVolume(ThreeDTilesNotion):
                 volume_type == "sphere"):
             print(f'Erroneous volume type {volume_type}')
             sys.exit(1)
-        self.header[volume_type] = array
+        self.add_property_from_array(volume_type, array)
 
-    def assert_model_is_valid(self):
+    def prepare_for_json(self):
         defined = 0
         if "box" in self.header:
             defined += 1
@@ -40,7 +40,3 @@ class BoundingVolume(ThreeDTilesNotion):
         if not defined == 1:
             print("BoundingVolumes must have a box, a region or a sphere")
             sys.exit(1)
-
-    def to_json(self):
-        self.assert_model_is_valid()
-        return super().to_json()

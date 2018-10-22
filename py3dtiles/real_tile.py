@@ -10,7 +10,7 @@ class TileForReal(ThreeDTilesNotion):
         # viewerRequestVolume
         self.header["geometricError"] = None
         # refine
-        self.header["transform"] = None
+        # self.header["transform"] = None
 
     def set_transform(self, transform):
         """
@@ -25,7 +25,7 @@ class TileForReal(ThreeDTilesNotion):
     def set_geometric_error(self, error):
         self.header["geometricError"] = error
 
-    def to_json(self):
+    def prepare_for_json(self):
         if not self.header["boundingVolume"]:
             print("Warning: defaulting unset Tile boundingVolume")
             # FIXME: what would be a decent default ?!
@@ -33,5 +33,4 @@ class TileForReal(ThreeDTilesNotion):
         if not self.header["geometricError"]:
             print("Warning: defaulting unset Tile boundingVolume")
             # FIXME: what would be a decent default ?!
-            self.set_geometric_error(1000000.0) 
-        return super().to_json()
+            self.set_geometric_error(1000000.0)

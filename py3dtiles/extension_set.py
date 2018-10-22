@@ -33,26 +33,39 @@ class ExtensionSet:
             }
 
         if title == "Batch Table":
-            return { "ids":[1, 2] }
-
-        if title == "Bounding Volume":
-            return { "box": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
-
-        if title == "Tileset":
             return \
             {
-                "asset": {"version": "1.0" },
+                "ids":[1, 2]
+            }
+
+        if title == "Bounding Volume":
+            return \
+            {
+                "box": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            }
+
+        if title == "Tile":
+            return \
+            {
                 "geometricError": 3.14159,
-                "root": {
-                    "boundingVolume": {
-                        "box": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-                    },
-                    "geometricError": 3.14159
+                "boundingVolume": {
+                    "box": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
                 }
             }
+        if title == "Tileset":
+            return \
+                {
+                    "asset": {"version": "1.0"},
+                    "geometricError": 3.14159,
+                    "root": {
+                        "boundingVolume": {
+                            "box": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+                        },
+                        "geometricError": 3.14159
+                    }
+                }
+
         return None
-        #"box": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        #"region": [1, 2, 3, 4, 5, 6]
 
     @classmethod
     def append_schema_from_file(cls, file_name):

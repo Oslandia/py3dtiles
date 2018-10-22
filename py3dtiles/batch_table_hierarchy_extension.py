@@ -1,30 +1,24 @@
 # -*- coding: utf-8 -*-
+from py3dtiles import ThreeDTilesNotion
 
-import json
 
-
-class BatchTableHierarchy(object):
+class BatchTableHierarchy(ThreeDTilesNotion):
     """
     Batch Table Hierarchy (BAH) is an Extension of a Batch Table.
     """
 
     def __init__(self):
-        # The usage of properties whose name is prefixed with an
-        # underscore are purely technical to this implementation
-        # and are not part of the Batch Table Hierarchy (BAH)
-        # specification.
         '''
         List of the _indexes_ of the class (types) used by this BAH.
         '''
         self._class_to_index = {}
 
-        self.hierarchy_root = {
-            'classes': [],
-            'instancesLength': 0,
-            'classIds': [],
-            'parentCounts': [],
-            'parentIds': []
-        }
+        super().__init__()
+        self.header['classes'] = list()
+        self.header['instancesLength'] = 0
+        self.header['classIds'] = list()
+        self.header['parentCounts'] = list()
+        self.header['parentIds'] = list()
 
     def add_class(self, class_name, property_names):
         """
@@ -33,7 +27,7 @@ class BatchTableHierarchy(object):
                               properties (attributes) defining this class
         :return: None
         """
-        self.hierarchy_root['classes'].append({
+        self.header['classes'].append({
             'name': class_name,
             'length': 0,
             'instances': {property_name: []
@@ -51,18 +45,14 @@ class BatchTableHierarchy(object):
         :param parent_indexes: indexes of the parent(s)
         """
         index = self._class_to_index[class_name]
-        my_class = self.hierarchy_root['classes'][index]
+        my_class = self.header['classes'][index]
         my_class['length'] += 1
         for property in my_class['instances']:
             my_class['instances'][property].append(properties[property])
-        self.hierarchy_root['instancesLength'] += 1
-        self.hierarchy_root['classIds'].append(index)
-        self.hierarchy_root['parentCounts'].append(len(parent_indexes))
-        self.hierarchy_root['parentIds'].extend(parent_indexes)
+        self.header['instancesLength'] += 1
+        self.header['classIds'].append(index)
+        self.header['parentCounts'].append(len(parent_indexes))
+        self.header['parentIds'].extend(parent_indexes)
 
     def get_extension_name(self):
         return "3DTILES_batch_table_hierarchy extension"
-
-    def to_json(self):
-        # convert dict to json string
-        return json.dumps(self.hierarchy_root, separators=(',', ':'))

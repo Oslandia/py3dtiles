@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import json
 import unittest
-from py3dtiles import BoundingVolume, ExtensionSet, TileForReal, TileSet
+from py3dtiles import BoundingVolume, ExtensionSet, HelperTest
+from py3dtiles import TileForReal, TileSet
 
 
 class Test_TileSet(unittest.TestCase):
@@ -19,20 +19,17 @@ class Test_TileSet(unittest.TestCase):
     def tearDown(self):
         self.schemas.delete_schemas()
 
-    def test_load_reference_file(self):
-        try:
-            reference_file = 'tests/data/CanaryWharf_tileset.json'
-            json_reference = json.loads(open(reference_file, 'r').read())
-            json_reference.pop('_comment', None)  # Drop the "comment".
-        except:
-            print(f'Unable to parse reference file {reference_file}')
-            self.fail()
-        return json_reference
+    def test_basics(self):
+        helper = HelperTest()
+        helper.sample_file_names.append('CanaryWharf_tileset.json')
+        helper.test_load_reference_files()
 
-    def test_json_reference_sample(self):
-        json_reference = self.test_load_reference_file()
-        if not self.schemas.validate("Tileset", json_reference):
-            print('Invalid item')
+    def unmature_test_json_reference_sample(self):
+        json_to_test = TestHelper.load_json_reference_file(
+                                             self.sample_file_names[0])
+        if not self.schemas.validate("Tileset",
+                                     json_to_test):
+            print('Invalid reference file.')
             self.fail()
 
     def build_tileset_sample(self):
@@ -53,30 +50,16 @@ class Test_TileSet(unittest.TestCase):
         #FIXME                           ["unique id", "another unique id"])
         return tile_set
 
-    def unmature_test_tileset_build_sample_and_validate(self):
-        """
-        Assert the build sample is valid against the BTH extension definition
-        """
-        tile_set = self.build_tileset_sample()
-        string_json_tile_set = tile_set.to_json()
-        json_tile_set = json.loads(string_json_tile_set)
+    def test_json_encoding(self):
+        tile_set = self.build_tileset_sample()  # A TileSet instance
+        return tile_set.to_json()               # A JSON formatted string
 
-        if not self.schemas.validate("Tileset", json_tile_set):
-            print('json_tile_set is not valid against the schema')
-            self.fail()
+    def test_tileset_build_sample_and_validate(self):
+        string_json_tile_set = self.test_json_encoding()
+        tile_set_from_json = json.loads(string_json_tile_set)  # A Python object
 
-    def unmature_test_tileset_build_sample_and_compare_reference_file(self):
-        """
-        Build the sample, load the version from the reference file and
-        compare them (in memory as opposed to "diffing" files)
-        """
-        bt = self.build_bt_sample()
-        string_json_bt = bt.to_json()
-        json_bt = json.loads(string_json_bt)
-
-        json_reference = self.test_load_reference_file()
-
-        if not json_bt.items() == json_reference.items():
+        if not self.schemas.validate("Tileset", tile_set_from_json):
+            print('tile_set_from_json is not valid against the schema')
             self.fail()
 
 if __name__ == "__main__":

@@ -56,12 +56,14 @@ class Test_Batch(unittest.TestCase):
                              {"street" : "Main Street", "houseNumber" : "2"}])
         return bt
 
+    def test_json_encoding(self):
+        self.build_bt_sample().to_json()
+
     def test_bt_build_sample_and_validate(self):
         """
         Assert the build sample is valid against the BTH extension definition
         """
-        bt = Test_Batch.build_bt_sample()
-        string_json_bt = bt.to_json()
+        string_json_bt = self.build_bt_sample().to_json()
         json_bt = json.loads(string_json_bt)
 
         if not self.extensions.validate("Batch Table", json_bt):
@@ -73,8 +75,7 @@ class Test_Batch(unittest.TestCase):
         Build the sample, load the version from the reference file and
         compare them (in memory as opposed to "diffing" files)
         """
-        bt = self.build_bt_sample()
-        string_json_bt = bt.to_json()
+        string_json_bt = self.build_bt_sample().to_json()
         json_bt = json.loads(string_json_bt)
 
         json_reference = self.test_load_reference_file()
