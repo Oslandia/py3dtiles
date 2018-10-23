@@ -113,11 +113,23 @@ def arrays2tileset(positions, normals, bboxes, transform, ids=None):
     maxTileSize = 2000
     featuresPerTile = 20
     indices = [i for i in range(len(positions))]
+
+    # glTF is Y-up, so to get the bounding boxes in the 3D tiles
+    # coordinate system, we have to apply a Y-to-Z transform to the
+    # glTF bounding boxes
+    zUpBboxes = []
+    for bbox in bboxes:
+        tmp = m = bbox[0]
+        M = bbox[1]
+        m = [m[0], -m[2], m[1]]
+        M = [M[0], -tmp[2], M[1]]
+        zUpBboxes.append([m, M])
+
     # Compute extent
     xMin = yMin = float('inf')
     xMax = yMax = - float('inf')
 
-    for bbox in bboxes:
+    for bbox in zUpBboxes:
         xMin = min(xMin, bbox[0][0])
         yMin = min(yMin, bbox[0][1])
         xMax = max(xMax, bbox[1][0])
@@ -133,7 +145,7 @@ def arrays2tileset(positions, normals, bboxes, transform, ids=None):
             tile = tile_extent(extent, maxTileSize, i, j)
 
             geoms = []
-            for idx, box in zip(indices, bboxes):
+            for idx, box in zip(indices, zUpBboxes):
                 bbox = BoundingBox(box[0], box[1])
 
                 if tile.inside(bbox.center()):
@@ -240,7 +252,7 @@ def from_db(db_name, table_name, column_name, id_column_name, user_name):
     id_statement = ""
     if id_column_name is not None:
         id_statement = "," + id_column_name
-    cur.execute("SELECT ST_AsBinary(ST_Translate({0}, {1}, {2}, {3})),"
+    cur.execute("SELECT ST_AsBinary(ST_RotateX(ST_Translate({0}, {1}, {2}, {3}), -pi() / 2)),"
                 "ST_Area(ST_Force2D({0})) AS weight{5} FROM {4} ORDER BY weight DESC"
                 .format(column_name, -offset[0], -offset[1], -offset[2],
                         table_name, id_statement))
