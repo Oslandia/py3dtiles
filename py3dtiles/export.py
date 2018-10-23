@@ -71,9 +71,9 @@ class Node():
     def to_tileset_r(self, error):
         (c1, c2) = (self.box.min, self.box.max)
         center = [(c1[i] + c2[i]) / 2 for i in range(0, 3)]
-        xAxis = [c2[0] - c1[0], 0, 0]
-        yAxis = [0, c2[1] - c1[1], 0]
-        zAxis = [0, 0, c2[2] - c1[2]]
+        xAxis = [(c2[0] - c1[0]) / 2, 0, 0]
+        yAxis = [0, (c2[1] - c1[1]) / 2, 0]
+        zAxis = [0, 0, (c2[2] - c1[2]) / 2]
         box = [round(x, 3) for x in center + xAxis + yAxis + zAxis]
         tile = {
             "boundingVolume": {
