@@ -1,20 +1,57 @@
 # -*- coding: utf-8 -*-
-
 import os
 import sys
 import json
 import jsonschema
 
-class ExtensionSet:
+
+class SchemaValidators:
     """
     Dictionary holding the set of validated schemas. The dictionary key is
     the name of the schema as encountered in the "title" property of the schema.
     """
-    schemas = dict()
+    schemas = None
+    """
+    Dictionary with the class_names (i.e. the name of the classes inheriting
+    from ThreeDTilesNotion) as key and the "title" property of the associated
+    schema as value. class_names can be seen as (technical) syntactic sugar
+    over the true schema identifier that is the "title".
+    """
+    class_names = None
+    """
+    Resolver is a technical mean for retrieving any possible sub-schema 
+    indicated within a given schema through a $ref entry.
+    """
     resolver = None
 
-    @classmethod
-    def get_dummy_item(cls, title):
+    def __init__(self):
+        if not self.schemas:
+            self.schemas = dict()
+            self.class_names = dict()
+
+            # The directory (with a path relative to the module) where all
+            # the schema files are located:
+            relative_dir = 'py3dtiles/jsonschemas'
+
+            # sub-schemas within the same directory (provided as absolute path)
+            # as the given schema. Refer to
+            #     https://github.com/Julian/jsonschema/issues/98
+            # for the reasons of the following parameters and call
+            base_uri = 'file://' + os.path.abspath(relative_dir) + '/'
+            self.resolver = jsonschema.RefResolver(base_uri, None)
+
+            for key, schema_file_name in {
+                'BatchTable':          'batchTable.schema.json',
+                'BatchTableHierarchy': '3DTILES_batch_table_hierarchy.json',
+                'BoundingVolume':      'boundingVolume.schema.json',
+                'TileForReal':         'tile.schema.json',
+                'TileSet':             'tileset.schema.json'
+                }.items():
+                schema_path_name = os.path.join('py3dtiles/jsonschemas',
+                                                schema_file_name)
+                self.append_schema_from_file(key, schema_path_name)
+
+    def get_dummy_item(self, title):
         """
         Retrieve a dummy (as simple as possible to validate) json item
         corresponding to the title
@@ -67,8 +104,7 @@ class ExtensionSet:
 
         return None
 
-    @classmethod
-    def append_schema_from_file(cls, file_name):
+    def append_schema_from_file(self, key, file_name):
         """
         Register an extension
         :param file_name: file holding the schema to be added to the
@@ -82,8 +118,10 @@ class ExtensionSet:
         if not os.path.isfile(file_name):
             print(f'No such file as {file_name}')
             sys.exit(1)
+
         try:
-            schema = json.loads(open(file_name, 'r').read())
+            with open(file_name, 'r') as schema_file:
+                schema = json.loads(schema_file.read())
         except:
             print(f'Unable to parse schema held in {file_name}')
             sys.exit(1)
@@ -94,62 +132,40 @@ class ExtensionSet:
             print('Schema argument misses a title. Dropping extension.')
             sys.exit(1)
 
-        if title in ExtensionSet.schemas:
+        if title in self.schemas:
             print(f'Already present extension {title}.')
             print(f'WARNING: overwriting extension {title}.')
-            del ExtensionSet.schemas[title]
+            del self.schemas[title]
 
-        # Build a resolver that will look for (resolve) possible $ref
-        # sub-schemas within the same directory (provided as absolute path)
-        # as the given schema. Refer to
-        #     https://github.com/Julian/jsonschema/issues/98
-        # for the reasons of the following paramets and call
-        base_uri = 'file://' + os.path.dirname(os.path.abspath(file_name)) + '/'
-        resolver = jsonschema.RefResolver(base_uri, None)
-
-        validator = jsonschema.Draft4Validator(schema, resolver = resolver)
+        validator = jsonschema.Draft4Validator(schema, resolver = self.resolver)
 
         try:
             # In order to validate the schema itself we still need to
             # provide a dummy json item
-            dummy_item = ExtensionSet.get_dummy_item(title)
+            dummy_item = self.get_dummy_item(title)
             validator.validate(dummy_item)
         except jsonschema.exceptions.SchemaError:
             print(f'Invalid schema {title}')
             sys.exit(1)
-        ExtensionSet.schemas[title] = {'schema': schema,
-                                          'validator': validator}
+        self.schemas[title] = {'schema': schema,
+                               'validator': validator}
+        self.class_names[key] = title
 
-    @classmethod
-    def validate(cls, schema_name, item):
-        """
-        Validate the provided item against the schema associated with the
-        named schema.
-        :param schema_name: the name of the concerned schema
-        :param item: a python object (possibly a result of a json.loads())
-        :return: Boolean
-        """
-        if not schema_name in cls.schemas:
-            print(f'Unregistered schema {schema_name}')
-            return False
+    def get_validator(self, class_name_key):
+        if not class_name_key in self.class_names:
+            print(f'Unregistered schema (class) key {class_name_key}')
+            return None
+        title = self.class_names[class_name_key]
+        if not title in self.schemas:
+            print(f'Unregistered schema with title {title}')
+            return None
         try:
-            validator = cls.schemas[schema_name]["validator"]
+            return self.schemas[title]["validator"]
         except:
-            print(f'Cannot find validator for schema {schema_name}')
-            return False
-        try:
-            validator.validate(item)
-        except:
-            print(f'Invalid item for schema {schema_name}')
-            return False
-        return True
+            print(f'Cannot find validator for schema {class_name_key}')
+        return None
 
-    @classmethod
-    def __contains__(cls, schema_name):
-        if schema_name in ExtensionSet.schemas:
+    def __contains__(self, schema_name):
+        if schema_name in self.schemas:
             return True
         return False
-
-    @classmethod
-    def delete_schemas(cls):
-        ExtensionSet.schemas = dict()

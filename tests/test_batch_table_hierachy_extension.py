@@ -2,7 +2,7 @@
 
 import json
 import unittest
-from py3dtiles import BatchTableHierarchy, ExtensionSet, HelperTest
+from py3dtiles import BatchTableHierarchy, HelperTest
 from tests.test_batch_table import Test_Batch
 
 
@@ -15,40 +15,11 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         helper.sample_file_names.append(
                               'batch_table_hierarchy_reference_sample.json')
         helper.test_load_reference_files()
-
-    def setUp(self):
-        self.extensions = ExtensionSet()
-        file_name = 'py3dtiles/jsonschemas/3DTILES_batch_table_hierarchy.json'
-        try:
-            self.extensions.append_schema_from_file(file_name)
-        except:
-            print(f'Unable to define extension {file_name}')
-            self.fail()
-        # We also need the classic Batch Table
-        file_name = 'py3dtiles/jsonschemas/batchTable.schema.json'
-        try:
-            self.extensions.append_schema_from_file(file_name)
-        except:
-            print(f'Unable to define extension {file_name}')
+        validator = lambda x: BatchTableHierarchy().validate(x)
+        if not helper.test_validate_reference_files(validator):
             self.fail()
 
-    def tearDown(self):
-        self.extensions.delete_schemas()
-
-    def test_json_sample(self):
-        try:
-            item_file = 'tests/data/batch_table_hierarchy_reference_sample.json'
-            item = json.loads(open(item_file, 'r').read())
-        except:
-            print(f'Unable to parse item file {filename}')
-            self.fail()
-        if not \
-            self.extensions.validate("3DTILES_batch_table_hierarchy extension",
-                                     item):
-            print('Invalid item')
-            self.fail()
-
-    def build_bth_sample(self):
+    def build_sample(self):
         """
         Programmatically define the reference sample encountered in the
         BTH specification cf
@@ -80,19 +51,15 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         return bth
 
     def test_json_encoding(self):
-        bth = self.build_bth_sample()     # A Batch Table Hierarchy instance
-        return bth.to_json()              # A JSON formatted string
+        return self.build_sample().to_json()
 
     def test_bth_build_sample_and_validate(self):
         """
         Assert the build sample is valid against the BTH extension definition
         """
-        bth = self.build_bth_sample()
-        string_json_bth = bth.to_json()
-        json_bth = json.loads(string_json_bth)
+        json_bth = json.loads(self.test_json_encoding())
 
-        if not self.extensions.validate("3DTILES_batch_table_hierarchy extension",
-                                   json_bth):
+        if not BatchTableHierarchy().validate(json_bth):
             print('json_bth is not valid against the schema')
             self.fail()
 
@@ -101,7 +68,7 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         Build the sample, load the version from the reference file and
         compare them (in memory as opposed to "diffing" files)
         """
-        string_json_bth = self.build_bth_sample().to_json()
+        string_json_bth = self.build_sample().to_json()
         json_bth = json.loads(string_json_bth)
 
         reference_file = 'tests/data/batch_table_hierarchy_reference_sample.json'
@@ -118,12 +85,12 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         # "extension.schema.json" file doesn't change the behavior of the
         # validator...
         bt = Test_Batch.build_bt_sample()
-        bth = self.build_bth_sample()
+        bth = self.build_sample()
         bt.add_extension(bth)
         string_json_extended_bt = bt.to_json()
         json_extended_bt = json.loads(string_json_extended_bt)
         print("aaaaaaaaaaaaaaaaaaaaaaa", string_json_extended_bt)
-        if not self.extensions.validate("Batch Table", json_extended_bt):
+        if not BatchTableHierarchy().validate(json_extended_bt):
            print('Invalid item')
            self.fail()
 

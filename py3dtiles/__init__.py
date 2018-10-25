@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
 # Note: order matters and must respect the dependency tree
+from .schema_validators import SchemaValidators
 from .threedtiles_notion import ThreeDTilesNotion
 from .b3dm import B3dm
 from .batch_table import BatchTable
 from .batch_table_hierarchy_extension import BatchTableHierarchy
 from .bounding_volume import BoundingVolume
-from .extension_set import ExtensionSet
 from .feature_table import Feature
 from .gltf import GlTF
 from .tile import Tile
@@ -23,7 +23,7 @@ __all__ = ['B3dm',
            'BatchTableHierarchy', 
            'BoundingVolume', 
            'convert_to_ecef', 
-           'ExtensionSet', 
+           'SchemaValidators',
            'Feature', 
            'GlTF', 
            'Pnts',

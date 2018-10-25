@@ -2,22 +2,10 @@
 
 import json
 import unittest
-from py3dtiles import BatchTable, ExtensionSet
+from py3dtiles import BatchTable
 
 
 class Test_Batch(unittest.TestCase):
-
-    def setUp(self):
-        self.extensions = ExtensionSet()
-        file_name = 'py3dtiles/jsonschemas/batchTable.schema.json'
-        try:
-            self.extensions.append_schema_from_file(file_name)
-        except:
-            print(f'Unable to define extension {file_name}')
-            self.fail()
-
-    def tearDown(self):
-        self.extensions.delete_schemas()
 
     def test_load_reference_file(self):
         try:
@@ -31,7 +19,7 @@ class Test_Batch(unittest.TestCase):
 
     def test_json_reference_sample(self):
         json_reference = self.test_load_reference_file()
-        if not self.extensions.validate("Batch Table", json_reference):
+        if not BatchTable().validate(json_reference):
             print('Invalid item')
             self.fail()
 
@@ -66,7 +54,7 @@ class Test_Batch(unittest.TestCase):
         string_json_bt = self.build_bt_sample().to_json()
         json_bt = json.loads(string_json_bt)
 
-        if not self.extensions.validate("Batch Table", json_bt):
+        if not BatchTable().validate(json_bt):
             print('json_bt is not valid against the schema')
             self.fail()
 

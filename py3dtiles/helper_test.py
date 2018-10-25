@@ -22,3 +22,10 @@ class HelperTest:
     def test_load_reference_files(self):
         for file_name in self.sample_file_names:
             self.load_json_reference_file(file_name)
+
+    def test_validate_reference_files(self, is_valid):
+        for file_name in self.sample_file_names:
+            json_reference = self.load_json_reference_file(file_name)
+            if not is_valid(json_reference):
+                return False
+        return True

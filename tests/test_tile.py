@@ -1,34 +1,18 @@
 # -*- coding: utf-8 -*-
 import json
 import unittest
-from py3dtiles import BoundingVolume, ExtensionSet, HelperTest, TileForReal
+from py3dtiles import BoundingVolume, HelperTest, TileForReal
 
 
 class Test_Tile(unittest.TestCase):
-
-    def setUp(self):
-        self.schemas = ExtensionSet()
-        file_name = 'py3dtiles/jsonschemas/tile.schema.json'
-        try:
-            self.schemas.append_schema_from_file(file_name)
-        except:
-            print(f'Unable to define extension {file_name}')
-            self.fail()
-
-    def tearDown(self):
-        self.schemas.delete_schemas()
 
     def test_basics(self):
         helper = HelperTest()
         helper.sample_file_names.append(
                               'Tile_box_bounding_volume_sample.json')
         helper.test_load_reference_files()
-
-    def test_json_reference_sample(self):
-        json_reference = HelperTest.load_json_reference_file(
-                                    'Tile_box_bounding_volume_sample.json')
-        if not self.schemas.validate("Tile", json_reference):
-            print('Invalid item')
+        validator = lambda x: TileForReal().validate(x)
+        if not helper.test_validate_reference_files(validator):
             self.fail()
 
     def build_sample(self):
@@ -53,7 +37,7 @@ class Test_Tile(unittest.TestCase):
         string_json_tile = self.build_sample().to_json()
         tile = json.loads(string_json_tile)
 
-        if not self.schemas.validate("Tile", tile):
+        if not TileForReal().validate(tile):
             print('Build tile is not valid against the schema.')
             self.fail()
 

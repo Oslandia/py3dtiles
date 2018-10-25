@@ -1,34 +1,23 @@
 # -*- coding: utf-8 -*-
 import json
 import unittest
-from py3dtiles import BoundingVolume, ExtensionSet, HelperTest
-from py3dtiles import TileForReal, TileSet
+from py3dtiles import BoundingVolume, HelperTest, TileForReal, TileSet
 
 
 class Test_TileSet(unittest.TestCase):
 
-    def setUp(self):
-        self.schemas = ExtensionSet()
-        file_name = 'py3dtiles/jsonschemas/tileset.schema.json'
-        try:
-            self.schemas.append_schema_from_file(file_name)
-        except:
-            print(f'Unable to define extension {file_name}')
-            self.fail()
-
-    def tearDown(self):
-        self.schemas.delete_schemas()
-
     def test_basics(self):
         helper = HelperTest()
-        helper.sample_file_names.append('CanaryWharf_tileset.json')
+        helper.sample_file_names.append('TileSet_CanaryWharf.json')
         helper.test_load_reference_files()
+        validator = lambda x: TileSet().validate(x)
+        if not helper.test_validate_reference_files(validator):
+            self.fail()
 
     def unmature_test_json_reference_sample(self):
-        json_to_test = TestHelper.load_json_reference_file(
+        json_to_test = HelperTest.load_json_reference_file(
                                              self.sample_file_names[0])
-        if not self.schemas.validate("Tileset",
-                                     json_to_test):
+        if not TileSet().validate(json_to_test):
             print('Invalid reference file.')
             self.fail()
 
@@ -58,7 +47,7 @@ class Test_TileSet(unittest.TestCase):
         string_json_tile_set = self.test_json_encoding()
         tile_set_from_json = json.loads(string_json_tile_set)  # A Python object
 
-        if not self.schemas.validate("Tileset", tile_set_from_json):
+        if not TileSet().validate(tile_set_from_json):
             print('tile_set_from_json is not valid against the schema')
             self.fail()
 
