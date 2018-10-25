@@ -7,7 +7,6 @@ class HelperTest:
     def __init__(self):
         self.sample_file_names = list()
 
-    @classmethod
     def load_json_reference_file(cls, filename):
         try:
             reference_file_path = os.path.join('tests/data', filename)

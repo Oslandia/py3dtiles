@@ -14,14 +14,7 @@ class Test_TileSet(unittest.TestCase):
         if not helper.test_validate_reference_files(validator):
             self.fail()
 
-    def unmature_test_json_reference_sample(self):
-        json_to_test = HelperTest.load_json_reference_file(
-                                             self.sample_file_names[0])
-        if not TileSet().validate(json_to_test):
-            print('Invalid reference file.')
-            self.fail()
-
-    def build_tileset_sample(self):
+    def build_sample(self):
         """
         Programmatically define a tileset sample encountered in the
         TileSet json header specification cf
@@ -40,13 +33,10 @@ class Test_TileSet(unittest.TestCase):
         return tile_set
 
     def test_json_encoding(self):
-        tile_set = self.build_tileset_sample()  # A TileSet instance
-        return tile_set.to_json()               # A JSON formatted string
+        return self.build_sample().to_json()
 
     def test_tileset_build_sample_and_validate(self):
-        string_json_tile_set = self.test_json_encoding()
-        tile_set_from_json = json.loads(string_json_tile_set)  # A Python object
-
+        tile_set_from_json = json.loads(self.test_json_encoding())
         if not TileSet().validate(tile_set_from_json):
             print('tile_set_from_json is not valid against the schema')
             self.fail()

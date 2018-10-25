@@ -2,7 +2,7 @@
 
 import json
 import unittest
-from py3dtiles import BatchTableHierarchy, HelperTest
+from py3dtiles import BatchTable, BatchTableHierarchy, HelperTest
 from tests.test_batch_table import Test_Batch
 
 
@@ -77,7 +77,7 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         if not json_bth.items() == json_reference.items():
             self.fail()
 
-    def unmature_test_plug_extension_into_simple_batch_table(self):
+    def test_plug_extension_into_simple_batch_table(self):
         # it looks like the schemas header within
         #       py3dtiles/jsonschemas/batchTable.schema.json
         # that points to a generic extension "extension.schema.json" is not
@@ -90,7 +90,7 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         string_json_extended_bt = bt.to_json()
         json_extended_bt = json.loads(string_json_extended_bt)
         print("aaaaaaaaaaaaaaaaaaaaaaa", string_json_extended_bt)
-        if not BatchTableHierarchy().validate(json_extended_bt):
+        if not BatchTable().validate(json_extended_bt):
            print('Invalid item')
            self.fail()
 
