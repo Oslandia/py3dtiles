@@ -5,7 +5,6 @@ import os
 import py3dtiles
 import lz4.frame as gzip
 from py3dtiles.points.utils import name_to_filename
-from py3dtiles.points.node import Node
 
 
 class _DummyNode():
@@ -49,6 +48,7 @@ def points_to_pnts(name, points, out_folder, include_rgb):
 
 
 def node_to_pnts(name, node, out_folder, include_rgb):
+    from py3dtiles.points.node import Node
     points = Node.get_points(node, include_rgb)
     return points_to_pnts(name, points, out_folder, include_rgb)
 
