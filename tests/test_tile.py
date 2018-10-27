@@ -7,12 +7,10 @@ from py3dtiles import BoundingVolume, HelperTest, TileForReal
 class Test_Tile(unittest.TestCase):
 
     def test_basics(self):
-        helper = HelperTest()
+        helper = HelperTest(lambda x: TileForReal().validate(x))
         helper.sample_file_names.append(
                               'Tile_box_bounding_volume_sample.json')
-        helper.test_load_reference_files()
-        validator = lambda x: TileForReal().validate(x)
-        if not helper.test_validate_reference_files(validator):
+        if not helper.check():
             self.fail()
 
     def build_sample(self):
@@ -31,14 +29,7 @@ class Test_Tile(unittest.TestCase):
         self.build_sample().to_json()
 
     def test_build_sample_and_validate(self):
-        """
-        Assert the build sample is valid against the schema
-        """
-        string_json_tile = self.build_sample().to_json()
-        tile = json.loads(string_json_tile)
-
-        if not TileForReal().validate(tile):
-            print('Build tile is not valid against the schema.')
+        if not self.build_sample().validate():
             self.fail()
 
 if __name__ == "__main__":

@@ -1,19 +1,21 @@
 # -*- coding: utf-8 -*-
-from py3dtiles import ThreeDTilesNotion
+from py3dtiles import Extension, ThreeDTilesNotion
 
 
-class BatchTableHierarchy(ThreeDTilesNotion):
+class BatchTableHierarchy(Extension, ThreeDTilesNotion):
     """
     Batch Table Hierarchy (BAH) is an Extension of a Batch Table.
     """
 
     def __init__(self):
+        Extension.__init__(self, '3DTILES_batch_table_hierarchy')
+        ThreeDTilesNotion.__init__(self)
+
         '''
         List of the _indexes_ of the class (types) used by this BAH.
         '''
         self._class_to_index = {}
 
-        super().__init__()
         self.header['classes'] = list()
         self.header['instancesLength'] = 0
         self.header['classIds'] = list()
@@ -34,7 +36,7 @@ class BatchTableHierarchy(ThreeDTilesNotion):
                           for property_name in property_names}})
         self._class_to_index[class_name] = len(self._class_to_index)
 
-    # properties: dictionnary with the same attributes as class instances
+    # properties: dictionary with the same attributes as class instances
     # parent indices refers to the index of the parent in the batch table
     def add_class_instance(self, class_name, properties, parent_indexes = []):
         """
@@ -54,5 +56,3 @@ class BatchTableHierarchy(ThreeDTilesNotion):
         self.header['parentCounts'].append(len(parent_indexes))
         self.header['parentIds'].extend(parent_indexes)
 
-    def get_extension_name(self):
-        return "3DTILES_batch_table_hierarchy extension"

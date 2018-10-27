@@ -8,22 +8,10 @@ from py3dtiles import BatchTable, HelperTest
 class Test_Batch(unittest.TestCase):
 
     def test_basics(self):
-        helper = HelperTest()
+        helper = HelperTest(lambda x: BatchTable().validate(x))
         helper.sample_file_names.append('batch_table_sample.json')
-        helper.test_load_reference_files()
-        validator = lambda x: BatchTable().validate(x)
-        if not helper.test_validate_reference_files(validator):
+        if not helper.check():
             self.fail()
-
-    def test_load_reference_file(self):
-        try:
-            reference_file = 'tests/data/batch_table_sample.json'
-            json_reference = json.loads(open(reference_file, 'r').read())
-            json_reference.pop('_comment', None)  # Drop the pesky "comment".
-        except:
-            print(f'Unable to parse reference file {reference_file}')
-            self.fail()
-        return json_reference
 
     @classmethod
     def build_bt_sample(cls):
@@ -53,8 +41,7 @@ class Test_Batch(unittest.TestCase):
         """
         Assert the build sample is valid against the BTH extension definition
         """
-        json_bt = json.loads(self.test_json_encoding())
-        if not BatchTable().validate(json_bt):
+        if not self.build_bt_sample().validate():
             print('json_bt is not valid against the schema')
             self.fail()
 

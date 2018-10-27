@@ -9,12 +9,10 @@ from py3dtiles import BoundingVolume, HelperTest
 class Test_Bounding_Volume(unittest.TestCase):
 
     def test_basics(self):
-        helper = HelperTest()
+        helper = HelperTest(lambda x: BoundingVolume().validate(x))
         helper.sample_file_names.extend(['bounding_volume_box_sample.json',
                                          'bounding_volume_region_sample.json'])
-        helper.test_load_reference_files()
-        validator = lambda x: BoundingVolume().validate(x)
-        if not helper.test_validate_reference_files(validator):
+        if not helper.check():
             self.fail()
 
     def build_sample(self):
@@ -28,13 +26,7 @@ class Test_Bounding_Volume(unittest.TestCase):
         return self.build_sample().to_json()
 
     def test_build_bounding_volume_sample_and_validate(self):
-        """
-        Assert the build sample is valid against the BTH extension definition
-        """
-        json_bounding_volume = json.loads(self.test_json_encoding())
-
-        if not BoundingVolume().validate(json_bounding_volume):
-            print('json_bounding_volume is not valid against the schema')
+        if not self.build_sample().validate():
             self.fail()
 
 if __name__ == "__main__":

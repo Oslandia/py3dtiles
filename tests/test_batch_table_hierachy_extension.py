@@ -11,12 +11,10 @@ class Test_BatchTableHierarchy(unittest.TestCase):
     Batch Table Hierarchy (BTH) extension related tests
     """
     def test_basics(self):
-        helper = HelperTest()
+        helper = HelperTest(lambda x: BatchTableHierarchy().validate(x))
         helper.sample_file_names.append(
                               'batch_table_hierarchy_reference_sample.json')
-        helper.test_load_reference_files()
-        validator = lambda x: BatchTableHierarchy().validate(x)
-        if not helper.test_validate_reference_files(validator):
+        if not helper.check():
             self.fail()
 
     def build_sample(self):
@@ -54,13 +52,7 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         return self.build_sample().to_json()
 
     def test_bth_build_sample_and_validate(self):
-        """
-        Assert the build sample is valid against the BTH extension definition
-        """
-        json_bth = json.loads(self.test_json_encoding())
-
-        if not BatchTableHierarchy().validate(json_bth):
-            print('json_bth is not valid against the schema')
+        if not self.build_sample().validate():
             self.fail()
 
     def test_bth_build_sample_and_compare_reference_file(self):
@@ -68,31 +60,26 @@ class Test_BatchTableHierarchy(unittest.TestCase):
         Build the sample, load the version from the reference file and
         compare them (in memory as opposed to "diffing" files)
         """
-        string_json_bth = self.build_sample().to_json()
-        json_bth = json.loads(string_json_bth)
-
-        reference_file = 'tests/data/batch_table_hierarchy_reference_sample.json'
-        json_reference = json.loads(open(reference_file, 'r').read())
-        json_reference.pop('_comment', None)  # Drop the pesky "comment" header.
-        if not json_bth.items() == json_reference.items():
+        json_bth = json.loads(self.build_sample().to_json())
+        json_bth_reference = HelperTest().load_json_reference_file(
+                            'batch_table_hierarchy_reference_sample.json')
+        if not json_bth.items() == json_bth_reference.items():
             self.fail()
 
     def test_plug_extension_into_simple_batch_table(self):
-        # it looks like the schemas header within
-        #       py3dtiles/jsonschemas/batchTable.schema.json
-        # that points to a generic extension "extension.schema.json" is not
-        # used by the validator (renaming that header or removing the
-        # "extension.schema.json" file doesn't change the behavior of the
-        # validator...
         bt = Test_Batch.build_bt_sample()
         bth = self.build_sample()
         bt.add_extension(bth)
-        string_json_extended_bt = bt.to_json()
-        json_extended_bt = json.loads(string_json_extended_bt)
-        print("aaaaaaaaaaaaaaaaaaaaaaa", string_json_extended_bt)
-        if not BatchTable().validate(json_extended_bt):
-           print('Invalid item')
-           self.fail()
+        bt.validate()
+
+        # Voluntarily introduce a mistake in the added extension in order
+        # to make sure that the extension is really validated. If bt.validate()
+        # is still true then the validation didn't check the extension and
+        # hence the test must fail.
+        bth.header['instancesLength'] = -1
+        if bt.validate(quiet=True):
+            self.fail()
+
 
 if __name__ == "__main__":
     unittest.main()

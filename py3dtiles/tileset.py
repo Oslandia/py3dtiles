@@ -9,15 +9,18 @@ class TileSet(ThreeDTilesNotion):
         super().__init__()
         self.header["asset"] = {"version": "1.0"}
         self.header["geometricError"] = None
-        self.header["root"] = TileForReal()
+        self.header["root"] = None
 
     def set_geometric_error(self, error):
         self.header["geometricError"] = error
 
-    def set_root_tile(self, root):
+    def set_root_tile(self, tile):
+        if not isinstance(tile, TileForReal):
+            print('Root tile must be of type...Tile.')
+            sys.exit(1)
         if self.header["root"]:
             print("Warning: overwriting root tile.")
-        self.header["root"] = root
+        self.header["root"] = tile
 
     def prepare_for_json(self):
         """

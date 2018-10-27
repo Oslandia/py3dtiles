@@ -7,11 +7,9 @@ from py3dtiles import BoundingVolume, HelperTest, TileForReal, TileSet
 class Test_TileSet(unittest.TestCase):
 
     def test_basics(self):
-        helper = HelperTest()
+        helper = HelperTest(lambda x: TileSet().validate(x))
         helper.sample_file_names.append('TileSet_CanaryWharf.json')
-        helper.test_load_reference_files()
-        validator = lambda x: TileSet().validate(x)
-        if not helper.test_validate_reference_files(validator):
+        if not helper.check():
             self.fail()
 
     def build_sample(self):
@@ -36,9 +34,7 @@ class Test_TileSet(unittest.TestCase):
         return self.build_sample().to_json()
 
     def test_tileset_build_sample_and_validate(self):
-        tile_set_from_json = json.loads(self.test_json_encoding())
-        if not TileSet().validate(tile_set_from_json):
-            print('tile_set_from_json is not valid against the schema')
+        if not self.build_sample().validate():
             self.fail()
 
 if __name__ == "__main__":

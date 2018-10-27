@@ -14,14 +14,6 @@ class BatchTable(ThreeDTilesNotion):
 
     def __init__(self):
         super().__init__()
-        self.extensions = list()
-
-    def add_extension(self, extension, extension_set=None):
-        extension_name = extension.get_extension_name()
-        if extension_set and not extension_name in extension_set:
-            print('Unkown extension {extension_name}.')
-            sys.exit(1)
-        self.extensions.append(extension)
 
     def to_array(self):
         """
