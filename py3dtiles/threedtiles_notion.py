@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import json
+import numpy
 from py3dtiles import Extension, SchemaValidators
 
 
@@ -73,3 +74,16 @@ class ThreeDTilesNotion(object):
                             separators=(',', ':'),
                             cls=JSONEncoder)
         return result
+
+    def to_array(self):
+        """
+        :return: the notion encoded as an array of binaries
+        """
+        # First encode the header as a json string
+        as_json = self.to_json()
+        # and make sure it respects a mandatory 4-byte alignement (refer e.g.
+        # to batch table documentation)
+        as_json += ' '*(4 - len(as_json) % 4)
+        # eventually return an array of binaries representing the
+        # considered ThreeDTilesNotion
+        return numpy.fromstring(as_json, dtype=numpy.uint8)
