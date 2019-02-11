@@ -293,7 +293,7 @@ def compute_header(mode, binVertices, binNormals, binIds,
             'primitives': [{
                 'attributes': {
                     "POSITION": "AV",
-                    "BATCHID": "AD"
+                    "_BATCHID": "AD"
                 },
                 "material": "defaultMaterial",
                 "mode": mode
