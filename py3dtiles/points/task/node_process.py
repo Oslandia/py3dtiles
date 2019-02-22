@@ -163,9 +163,8 @@ def run(work, octree_metadata, queue, verbose):
             })], copy=False)
 
         if log_enabled:
-            print('[<] return result [{} sec, {} MB] [{}]'.format(
+            print('[<] return result [{} sec] [{}]'.format(
                 round(time.time() - begin, 2),
-                memory_usage(proc=os.getpid()),
                 time.time() - begin), file=log_file, flush=True)
             if log_file is not None:
                 log_file.close()

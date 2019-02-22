@@ -69,7 +69,6 @@ def write_tileset(in_folder, out_folder, octree_metadata, offset, scale, project
     tileset = {
         'asset': {
             'version': '1.0',
-            'gltfUpAxis': 'Z',
         },
         'geometricError': np.linalg.norm(
             octree_metadata.aabb[1] - octree_metadata.aabb[0]) / scale[0],

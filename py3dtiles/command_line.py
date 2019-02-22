@@ -3,6 +3,7 @@ import py3dtiles.convert as convert
 import py3dtiles.info as info
 import py3dtiles.merger as merger
 import py3dtiles.export as export
+import traceback
 
 # https://stackoverflow.com/a/43357954
 def str2bool(v):
@@ -44,8 +45,8 @@ def main():
         else:
             parser.print_help()
     except Exception as e:
-        print(e)
-        print()
+        traceback.print_exc()
+        print('')
         parser.print_help()
 
 if __name__ == '__main__':

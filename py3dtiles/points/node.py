@@ -4,9 +4,12 @@ import os
 import json
 
 from py3dtiles import TileReader
+from py3dtiles.feature_table import SemanticPoint
 from py3dtiles.points.utils import name_to_filename, node_from_name, SubdivisionType, aabb_size_to_subdivision_type
 from py3dtiles.points.points_grid import Grid
 from py3dtiles.points.distance import xyz_to_child_index
+from py3dtiles.points.task.pnts_writer import points_to_pnts
+
 
 def node_to_tileset(args):
     return Node.to_tileset(None, args[0], args[1], args[2], args[3], args[4])
@@ -183,69 +186,115 @@ class Node(object):
 
     @staticmethod
     def to_tileset(executor, name, parent_aabb, parent_spacing, folder, scale):
-        # Se're working we unscaled / unoffsetted coordinates,
-        # so there's no need to apply the inverse transform
-        # from the tileset
         node = node_from_name(name, parent_aabb, parent_spacing)
         aabb = node.aabb
-
         ondisk_tile = name_to_filename(folder, name, '.pnts')
+        xyz, rgb = None, None
+
+        # Read tile's pnts file, if existing, we'll need it for:
+        #   - computing the real AABB (instead of the one based on the octree)
+        #   - merging this tile's small (<100 points) children
         if os.path.exists(ondisk_tile):
             tile = TileReader().read_file(ondisk_tile)
             fth = tile.body.feature_table.header
-            xyz = tile.body.feature_table.body.positions_arr.view(np.float32).reshape((fth.points_length, 3))
-            aabb = np.array([np.min(xyz, axis=0), np.max(xyz, axis=0)])
 
-        center = ((aabb[0] + aabb[1]) * 0.5).tolist()
-        half_size = ((aabb[1] - aabb[0]) * 0.5).tolist()
+            xyz = tile.body.feature_table.body.positions_arr
+            if fth.colors != SemanticPoint.NONE:
+                rgb = tile.body.feature_table.body.colors_arr
+            xyz_float = xyz.view(np.float32).reshape((fth.points_length, 3))
+            # update aabb based on real values
+            aabb = np.array([
+                np.amin(xyz_float, axis=0),
+                np.amax(xyz_float, axis=0)])
 
-        tile = {
-            'boundingVolume': {
-                'box': [
-                    center[0], center[1], center[2],
-                    half_size[0], 0, 0,
-                    0, half_size[1], 0,
-                    0, 0, half_size[2]]
-            },
-            # geometricError is in meter so cancel scale
-            'geometricError': 20 * node.spacing / scale[0],
-        }
+        # geometricError is in meters, so we divide it by the scale
+        tileset = {'geometricError': 10 * node.spacing / scale[0]}
 
         children = []
+        tile_needs_rewrite = False
         if os.path.exists(ondisk_tile):
-            tile['content'] = {'url': os.path.relpath(ondisk_tile, folder)}
+            tileset['content'] = {'uri': os.path.relpath(ondisk_tile, folder)}
         for child in ['0', '1', '2', '3', '4', '5', '6', '7']:
-            child_name = '{}{}'.format(name.decode('ascii'), child).encode('ascii')
-            ondisk_tile = name_to_filename(folder, child_name, '.pnts')
-            if os.path.exists(ondisk_tile):
+            child_name = '{}{}'.format(
+                name.decode('ascii'),
+                child).encode('ascii')
+            child_ondisk_tile = name_to_filename(folder, child_name, '.pnts')
+
+            if os.path.exists(child_ondisk_tile):
+                # See if we should merge this child in tile
+                if xyz is not None:
+                    # Read pnts content
+                    tile = TileReader().read_file(child_ondisk_tile)
+                    fth = tile.body.feature_table.header
+
+                    # If this child is small enough, merge in the current tile
+                    if fth.points_length < 100:
+                        xyz = np.concatenate(
+                            (xyz,
+                             tile.body.feature_table.body.positions_arr))
+
+                        if fth.colors != SemanticPoint.NONE:
+                            rgb = np.concatenate(
+                                (rgb,
+                                 tile.body.feature_table.body.colors_arr))
+
+                        # update aabb
+                        xyz_float = tile.body.feature_table.body.positions_arr.view(
+                            np.float32).reshape((fth.points_length, 3))
+
+                        aabb[0] = np.amin(
+                            [aabb[0], np.min(xyz_float, axis=0)], axis=0)
+                        aabb[1] = np.amax(
+                            [aabb[1], np.max(xyz_float, axis=0)], axis=0)
+
+                        tile_needs_rewrite = True
+                        os.remove(child_ondisk_tile)
+                        continue
+
+                # Add child to the to-be-processed list if it hasn't been merged
                 if executor is not None:
                     children += [(child_name, node.aabb, node.spacing, folder, scale)]
                 else:
                     children += [Node.to_tileset(None, child_name, node.aabb, node.spacing, folder, scale)]
 
+        # If we merged at least one child tile in the current tile
+        # the pnts file needs to be rewritten.
+        if tile_needs_rewrite:
+            os.remove(ondisk_tile)
+            count, filename = points_to_pnts(name, np.concatenate((xyz, rgb)), folder, rgb is not None)
+
+        center = ((aabb[0] + aabb[1]) * 0.5).tolist()
+        half_size = ((aabb[1] - aabb[0]) * 0.5).tolist()
+        tileset['boundingVolume'] = {
+            'box': [
+                center[0], center[1], center[2],
+                half_size[0], 0, 0,
+                0, half_size[1], 0,
+                0, 0, half_size[2]]
+        }
+
         if executor is not None:
             children = [t for t in executor.map(node_to_tileset, children)]
 
         if children:
-            tile['children'] = children
+            tileset['children'] = children
         else:
-            tile['geometricError'] = 0.0
+            tileset['geometricError'] = 0.0
 
         if len(name) > 0 and children:
-            if len(json.dumps(tile)) > 100000:
+            if len(json.dumps(tileset)) > 100000:
                 tile_root = {
                     'asset': {
                         'version': '1.0',
-                        'gltfUpAxis': 'Z',
                     },
                     'refine': 'ADD',
-                    'geometricError': tile['geometricError'],
-                    'root': tile
+                    'geometricError': tileset['geometricError'],
+                    'root': tileset
                 }
                 tileset_name = 'tileset.{}.json'.format(name.decode('ascii'))
                 with open('{}/{}'.format(folder, tileset_name), 'w') as f:
                     f.write(json.dumps(tile_root))
-                tile['content'] = {'url': tileset_name}
-                tile['children'] = []
+                tileset['content'] = {'uri': tileset_name}
+                tileset['children'] = []
 
-        return tile
+        return tileset
