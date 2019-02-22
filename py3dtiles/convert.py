@@ -19,6 +19,7 @@ from py3dtiles.points.node import Node
 from py3dtiles import TileReader
 from py3dtiles.points.shared_node_store import SharedNodeStore
 import py3dtiles.points.task.las_reader as las_reader
+import py3dtiles.points.task.xyz_reader as xyz_reader
 import py3dtiles.points.task.node_process as node_process
 import py3dtiles.points.task.pnts_writer as pnts_writer
 
@@ -129,7 +130,9 @@ def zmq_process(activity_graph, projection, node_store, octree_metadata, folder,
                 # ack
                 break
 
-            las_reader.run(
+            _, ext = os.path.splitext(command['filename'])
+            fn = las_reader.run if ext == '.las' else xyz_reader.run
+            fn(
                 command['id'],
                 command['filename'],
                 command['offset_scale'],
@@ -200,14 +203,14 @@ def can_pnts_be_written(name, finished_node, input_nodes, active_nodes):
         not is_ancestor_in_list(ln, name, input_nodes))
 
 
-LasReader = namedtuple('LasReader', ['input', 'active'])
+Reader = namedtuple('Reader', ['input', 'active'])
 NodeProcess = namedtuple('NodeProcess', ['input', 'active', 'inactive'])
 ToPnts = namedtuple('ToPnts', ['input', 'active'])
 
 
 class State():
     def __init__(self, pointcloud_file_portions):
-        self.las_reader = LasReader(input=pointcloud_file_portions, active=[])
+        self.reader = Reader(input=pointcloud_file_portions, active=[])
         self.node_process = NodeProcess(input={}, active={}, inactive=[])
         self.to_pnts = ToPnts(input=[], active=[])
 
@@ -215,8 +218,8 @@ class State():
         print('{:^16}|{:^8}|{:^8}|{:^8}'.format('Step', 'Input', 'Active', 'Inactive'))
         print('{:^16}|{:^8}|{:^8}|{:^8}'.format(
             'LAS reader',
-            len(self.las_reader.input),
-            len(self.las_reader.active),
+            len(self.reader.input),
+            len(self.reader.active),
             ''))
         print('{:^16}|{:^8}|{:^8}|{:^8}'.format(
             'Node process',
@@ -305,7 +308,9 @@ def main(args):
     node_store = SharedNodeStore(working_dir)
 
     # read all input files headers and determine the aabb/spacing
-    infos = las_reader.init(args)
+    _, ext = os.path.splitext(args.files[0])
+    fn = las_reader.init if ext == '.las' else xyz_reader.init
+    infos = fn(args)
 
     avg_min = infos['avg_min']
     rotation_matrix = None
@@ -367,7 +372,7 @@ def main(args):
         elif base_spacing > 1:
             root_scale = np.array([0.1, 0.1, 0.1])
         else:
-            root_scale = np.array([1.0, 1.0, 1.0])
+            root_scale = np.array([1, 1, 1])
 
     root_aabb = root_aabb * root_scale
     root_spacing = compute_spacing(root_aabb)
@@ -381,6 +386,7 @@ def main(args):
         print('  - root spacing: {}'.format(root_spacing / root_scale[0]))
         print('  - root aabb: {}'.format(root_aabb))
         print('  - original aabb: {}'.format(original_aabb))
+        print('  - scale: {}'.format(root_scale))
 
     startup = time.time()
 
@@ -464,14 +470,14 @@ def main(args):
                         node_store.put(result['name'], result['save'])
 
                     if result['name'][0:4] == b'root':
-                        state.las_reader.active.remove(result['name'])
+                        state.reader.active.remove(result['name'])
                     else:
                         del state.node_process.active[result['name']]
 
                         if len(result['name']) > 0:
                             state.node_process.inactive.append(result['name'])
 
-                            if not state.las_reader.input and not state.las_reader.active:
+                            if not state.reader.input and not state.reader.active:
                                 if state.node_process.active or state.node_process.input:
                                     finished_node = result['name']
                                     if not can_pnts_be_written(
@@ -546,14 +552,14 @@ def main(args):
                 if job_list:
                     zmq_send_to_process(zmq_idle_clients, zmq_skt, job_list)
 
-        while (state.las_reader.input and
-           (points_in_progress < 60000000 or not state.las_reader.active) and
-           len(state.las_reader.active) < max_splitting_jobs_count and
+        while (state.reader.input and
+           (points_in_progress < 60000000 or not state.reader.active) and
+           len(state.reader.active) < max_splitting_jobs_count and
            can_queue_more_jobs(zmq_idle_clients)):
             if args.verbose >= 1:
-                print('Submit next portion {}'.format(state.las_reader.input[-1]))
-            _id = 'root_{}'.format(len(state.las_reader.input)).encode('ascii')
-            file, portion = state.las_reader.input.pop()
+                print('Submit next portion {}'.format(state.reader.input[-1]))
+            _id = 'root_{}'.format(len(state.reader.input)).encode('ascii')
+            file, portion = state.reader.input.pop()
             points_in_progress += portion[1] - portion[0]
 
             zmq_send_to_process(zmq_idle_clients, zmq_skt, [pickle.dumps({
@@ -563,7 +569,7 @@ def main(args):
                 'id': _id
                 })])
 
-            state.las_reader.active.append(_id)
+            state.reader.active.append(_id)
 
         # if at this point we have no work in progress => we're done
         if len(zmq_idle_clients) == args.jobs or zmq_processes_killed == args.jobs:
@@ -609,7 +615,7 @@ def main(args):
                 print('')
                 print('Pending:')
                 print('  - root: {} / {}'.format(
-                    len(state.las_reader.input),
+                    len(state.reader.input),
                     initial_portion_count))
                 print('  - other: {} files for {} nodes'.format(
                     sum([len(f[0]) for f in state.node_process.input.values()]),
