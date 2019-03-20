@@ -191,20 +191,24 @@ def triangulate(polygon, additionalPolygons=[]):
     if(math.fabs(vectProd[0]) > math.fabs(vectProd[1])
        and math.fabs(vectProd[0]) > math.fabs(vectProd[2])):
         # (yz) projection
+        proj = 'yz'
         for linestring in polygon:
             for point in linestring:
                 polygon2D.extend([point[1], point[2]])
     elif(math.fabs(vectProd[1]) > math.fabs(vectProd[2])):
         # (zx) projection
+        proj = 'xz'
         for linestring in polygon:
             for point in linestring:
                 polygon2D.extend([point[0], point[2]])
     else:
-        # (xy) projextion
+        proj = 'xy'
+        # (xy) projection
         for linestring in polygon:
             for point in linestring:
                 polygon2D.extend([point[0], point[1]])
 
+    windingOrder = isClockwise(polygon2D)
     trianglesIdx = earcut(polygon2D, holes, 2)
 
     arrays = [[] for _ in range(len(additionalPolygons) + 1)]
@@ -215,8 +219,13 @@ def triangulate(polygon, additionalPolygons=[]):
         p2 = unflatten(polygon, holes, t[2])
         # triangulation may break triangle orientation, test it before
         # adding triangles
-        crossProduct = np.cross(p1 - p0, p2 - p0)
-        invert = np.dot(vectProd, crossProduct) < 0
+        if proj == 'yz':
+            triangle2D = [p0[1], p0[2], p1[1], p1[2], p2[1], p2[2]]
+        elif proj == 'xz':
+            triangle2D = [p0[0], p0[2], p1[0], p1[2], p2[0], p2[2]]
+        else:
+            triangle2D = [p0[0], p0[1], p1[0], p1[1], p2[0], p2[1]]
+        invert = isClockwise(triangle2D) != windingOrder
         if invert:
             arrays[0].append([p1, p0, p2])
         else:
@@ -239,3 +248,17 @@ def unflatten(array, lengths, index):
         if index >= lgth:
             return array[i + 1][index - lgth]
     return array[0][index]
+
+def isClockwise(polygon2D):
+    sum = 0.0
+    for i in range(0, len(polygon2D), 2):
+        i2 = (i + 2) % len(polygon2D)
+        x1 = polygon2D[i]
+        y1 = polygon2D[i+1]
+        x2 = polygon2D[i2]
+        y2 = polygon2D[i2+1]
+        sum += (x2 - x1) * (y2 + y1)
+
+    return sum > 0.0
+
+
