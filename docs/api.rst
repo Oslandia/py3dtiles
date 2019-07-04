@@ -22,7 +22,7 @@ Point Cloud
 ~~~~~~~~~~~
 
 Points Tile Format:
-https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/PointCloud
+https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification/TileFormats/PointCloud
 
 In the current implementation, the *Pnts* class only contains a *FeatureTable*
 (*FeatureTableHeader* and a *FeatureTableBody*, which contains features of type
