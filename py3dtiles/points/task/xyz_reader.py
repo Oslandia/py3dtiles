@@ -35,7 +35,7 @@ def init(args):
                 if not line:
                     points = np.resize(points, (i, 3))
                     break
-                points[i] = [float(s) for s in line.split(" ")]
+                points[i] = [float(s) for s in line.split(" ")][:3]
 
             if points.shape[0] == 0:
                 break
@@ -44,7 +44,9 @@ def init(args):
                 seek_values += [offset]
 
             count += points.shape[0]
-            batch_aabb = np.array([np.min(points, axis=0), np.max(points, axis=0)])
+            batch_aabb = np.array([
+                np.min(points, axis=0), np.max(points, axis=0)
+            ])
 
             # Update aabb
             if aabb is None:
@@ -85,6 +87,15 @@ def init(args):
 def run(_id, filename, offset_scale, portion, queue, projection, verbose):
     """
     Reads points from a xyz file
+
+    Consider XYZIRGB format following FME documentation(*). If the number of
+    features does not correspond (i.e. does not equal to 7), we do the
+    following hypothesis:
+    - 3 features mean XYZ
+    - 4 features mean XYZI
+    - 6 features mean XYZRGB
+
+    (*) See: https://docs.safe.com/fme/html/FME_Desktop_Documentation/FME_ReadersWriters/pointcloudxyz/pointcloudxyz.htm
     """
     try:
         f = open(filename, "r")
@@ -95,15 +106,24 @@ def run(_id, filename, offset_scale, portion, queue, projection, verbose):
 
         f.seek(portion[2])
 
+        feature_nb = 7
+
         for i in range(0, point_count, step):
-            points = np.zeros((step, 3), dtype=np.float32)
+            points = np.zeros((step, feature_nb), dtype=np.float32)
 
             for j in range(0, step):
                 line = f.readline()
                 if not line:
-                    points = np.resize(points, (j, 3))
+                    points = np.resize(points, (j, feature_nb))
                     break
-                points[j] = [float(s) for s in line.split(" ")]
+                line_features = [float(s) for s in line.split(" ")]
+                if len(line_features) == 3:
+                    line_features += [None] * 4  # Insert intensity and RGB
+                elif len(line_features) == 4:
+                    line_features += [None] * 3  # Insert RGB
+                elif len(line_features) == 6:
+                    line_features.insert(3, None)  # Insert intensity
+                points[j] = line_features
 
             x, y, z = [points[:, c] for c in [0, 1, 2]]
 
@@ -123,8 +143,8 @@ def run(_id, filename, offset_scale, portion, queue, projection, verbose):
 
             coords = np.ascontiguousarray(coords.astype(np.float32))
 
-            # Read colors
-            colors = np.full((point_count, 3), 255, dtype=np.uint8)
+            # Read colors: 3 last columns of the point cloud
+            colors = points[:, -3:].astype(np.uint8)
 
             result = (
                 "".encode("ascii"),
