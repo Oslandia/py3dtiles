@@ -12,16 +12,18 @@ def convert_to_ecef(x, y, z, epsg_input):
     return pyproj.transform(inp, outp, x, y, z)
 
 
-class TileReader(object):
+class TileContentReader(object):
 
-    def read_file(self, filename):
+    @staticmethod
+    def read_file(filename):
         with open(filename, 'rb') as f:
             data = f.read()
             arr = np.frombuffer(data, dtype=np.uint8)
-            return self.read_array(arr)
+            return TileContentReader.read_array(arr)
         return None
 
-    def read_array(self, array):
+    @staticmethod
+    def read_array(array):
         magic = ''.join([c.decode('UTF-8') for c in array[0:4].view('c')])
         if magic == 'pnts':
             return Pnts.from_array(array)

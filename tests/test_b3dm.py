@@ -2,17 +2,16 @@
 
 import unittest
 import numpy as np
-import binascii
 import json
 # np.set_printoptions(formatter={'int':hex})
 
-from py3dtiles import TileReader, Tile, Feature, B3dm, GlTF, TriangleSoup
+from py3dtiles import TileContentReader, B3dm, GlTF, TriangleSoup
 
 
-class TestTileReader(unittest.TestCase):
+class TestTileContentReader(unittest.TestCase):
 
     def test_read(self):
-        tile = TileReader().read_file('tests/dragon_low.b3dm')
+        tile = TileContentReader().read_file('tests/dragon_low.b3dm')
 
         self.assertEqual(tile.header.version, 1.0)
         self.assertEqual(tile.header.tile_byte_length, 47246)
@@ -26,7 +25,7 @@ class TestTileReader(unittest.TestCase):
         self.assertDictEqual(gltf_header, tile.body.glTF.header)
 
 
-class TestTileBuilder(unittest.TestCase):
+class TestTileContentBuilder(unittest.TestCase):
 
     def test_build(self):
         with open('tests/building.wkb', 'rb') as f:
@@ -53,7 +52,7 @@ class TestTileBuilder(unittest.TestCase):
         t = B3dm.from_glTF(glTF)
 
         # get an array
-        tile_arr = t.to_array()
+        t.to_array()
         self.assertEqual(t.header.version, 1.0)
         self.assertEqual(t.header.tile_byte_length, 2952)
         self.assertEqual(t.header.ft_json_byte_length, 0)
@@ -62,6 +61,7 @@ class TestTileBuilder(unittest.TestCase):
         self.assertEqual(t.header.bt_bin_byte_length, 0)
 
         # t.save_as("/tmp/py3dtiles_test_build_1.b3dm")
+
 
 class TestTexturedTileBuilder(unittest.TestCase):
 
@@ -93,7 +93,7 @@ class TestTexturedTileBuilder(unittest.TestCase):
         t = B3dm.from_glTF(glTF)
 
         # get an array
-        tile_arr = t.to_array()
+        t.to_array()
         self.assertEqual(t.header.version, 1.0)
         self.assertEqual(t.header.tile_byte_length, 1556)
         self.assertEqual(t.header.ft_json_byte_length, 0)

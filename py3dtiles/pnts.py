@@ -2,11 +2,11 @@
 import struct
 import numpy as np
 
-from .tile import Tile, TileHeader, TileBody, TileType
+from .tile import TileContent, TileHeader, TileBody, TileType
 from .feature_table import FeatureTable
 
 
-class Pnts(Tile):
+class Pnts(TileContent):
 
     @staticmethod
     def from_features(pdtype, cdtype, features):
@@ -20,7 +20,7 @@ class Pnts(Tile):
 
         Returns
         -------
-        tile : Tile
+        tile : TileContent
         """
 
         ft = FeatureTable.from_features(pdtype, cdtype, features)
@@ -30,7 +30,7 @@ class Pnts(Tile):
 
         th = PntsHeader()
 
-        t = Tile()
+        t = TileContent()
         t.body = tb
         t.header = th
 
@@ -45,7 +45,7 @@ class Pnts(Tile):
 
         Returns
         -------
-        t : Tile
+        t : TileContent
         """
 
         # build tile header
@@ -60,8 +60,8 @@ class Pnts(Tile):
         b_arr = array[PntsHeader.BYTELENGTH:PntsHeader.BYTELENGTH + b_len]
         b = PntsBody.from_array(h, b_arr)
 
-        # build Tile with header and body
-        t = Tile()
+        # build TileContent with header and body
+        t = TileContent()
         t.header = h
         t.body = b
 

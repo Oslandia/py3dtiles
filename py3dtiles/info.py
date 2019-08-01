@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
-from py3dtiles import TileReader
+from py3dtiles import TileContentReader
 
 
 def print_pnts_info(tile):
@@ -53,7 +53,7 @@ def print_b3dm_info(tile):
 
 
 def main(args):
-    tile = TileReader().read_file(args.filename)
+    tile = TileContentReader.read_file(args.filename)
     magic = tile.header.magic_value
 
     if magic == "pnts":

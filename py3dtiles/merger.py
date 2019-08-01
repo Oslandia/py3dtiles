@@ -2,7 +2,7 @@ import sys
 import os
 import numpy as np
 import json
-from py3dtiles import TileReader
+from py3dtiles import TileContentReader
 from py3dtiles.points.utils import split_aabb
 from py3dtiles.points.transformations import inverse_matrix
 from py3dtiles.points.task.pnts_writer import points_to_pnts
@@ -16,7 +16,7 @@ def _get_root_tile(tileset, filename):
         folder,
         tileset['root']['content']['uri'])
 
-    return TileReader().read_file(pnts_filename)
+    return TileContentReader.read_file(pnts_filename)
 
 
 def _get_root_transform(tileset):

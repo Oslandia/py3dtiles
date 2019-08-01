@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from .utils import TileReader, convert_to_ecef
-from .tile import Tile
+from .utils import TileContentReader, convert_to_ecef
+from .tile import TileContent
 from .feature_table import Feature
 from .gltf import GlTF
 from .pnts import Pnts
@@ -10,5 +10,5 @@ from .batch_table import BatchTable
 from .wkb_utils import TriangleSoup
 
 __version__ = '1.1.0'
-__all__ = ['TileReader', 'convert_to_ecef', 'Tile', 'Feature', 'GlTF', 'Pnts',
+__all__ = ['TileContentReader', 'convert_to_ecef', 'TileContent', 'Feature', 'GlTF', 'Pnts',
            'B3dm', 'BatchTable', 'TriangleSoup']
