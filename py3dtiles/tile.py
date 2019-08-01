@@ -5,7 +5,7 @@ from enum import Enum
 from abc import ABC, abstractmethod
 
 
-class Tile(ABC):
+class TileContent(ABC):
 
     def __init__(self):
         self.header = None

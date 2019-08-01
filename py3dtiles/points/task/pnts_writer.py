@@ -33,7 +33,7 @@ def points_to_pnts(name, points, out_folder, include_rgb):
     body = py3dtiles.pnts.PntsBody()
     body.feature_table = ft
 
-    tile = py3dtiles.tile.Tile()
+    tile = py3dtiles.tile.TileContent()
     tile.body = body
     tile.header = py3dtiles.pnts.PntsHeader()
     tile.header.sync(body)

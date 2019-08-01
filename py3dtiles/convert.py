@@ -16,7 +16,7 @@ import argparse
 from py3dtiles.points.transformations import rotation_matrix, angle_between_vectors, vector_product, inverse_matrix, scale_matrix, translation_matrix
 from py3dtiles.points.utils import compute_spacing, name_to_filename
 from py3dtiles.points.node import Node
-from py3dtiles import TileReader
+from py3dtiles import TileContentReader
 from py3dtiles.points.shared_node_store import SharedNodeStore
 import py3dtiles.points.task.las_reader as las_reader
 import py3dtiles.points.task.xyz_reader as xyz_reader
@@ -41,11 +41,11 @@ def write_tileset(in_folder, out_folder, octree_metadata, offset, scale, project
         for child in ['0', '1', '2', '3', '4', '5', '6', '7']:
             ondisk_tile = name_to_filename(out_folder, child.encode('ascii'), '.pnts')
             if os.path.exists(ondisk_tile):
-                tile = TileReader().read_file(ondisk_tile)
-                fth = tile.body.feature_table.header
-                xyz = tile.body.feature_table.body.positions_arr.view(np.float32).reshape((fth.points_length, 3))
+                tile_content = TileContentReader.read_file(ondisk_tile)
+                fth = tile_content.body.feature_table.header
+                xyz = tile_content.body.feature_table.body.positions_arr.view(np.float32).reshape((fth.points_length, 3))
                 if include_rgb:
-                    rgb = tile.body.feature_table.body.colors_arr.reshape((fth.points_length, 3))
+                    rgb = tile_content.body.feature_table.body.colors_arr.reshape((fth.points_length, 3))
                 else:
                     rgb = np.zeros(xyz.shape, dtype=np.uint8)
 
