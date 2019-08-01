@@ -72,7 +72,7 @@ def init(files):
 
             # apply transformation
             transform = _get_root_transform(tileset)
-            bbox =_aabb_from_3dtiles_bounding_volume(
+            bbox = _aabb_from_3dtiles_bounding_volume(
                 tileset['root']['boundingVolume'],
                 transform)
 
@@ -124,11 +124,12 @@ def _3dtiles_bounding_box_from_aabb(aabb, transform=None):
 
     return {
         'box': [
-                center[0], center[1], center[2],
-                half_size[0], 0, 0,
-                0, half_size[1], 0,
-                0, 0, half_size[2]]
-        }
+            center[0], center[1], center[2],
+            half_size[0], 0, 0,
+            0, half_size[1], 0,
+            0, 0, half_size[2]
+        ]
+    }
 
 
 def _aabb_from_3dtiles_bounding_volume(volume, transform=None):
@@ -150,7 +151,6 @@ def _aabb_from_3dtiles_bounding_volume(volume, transform=None):
         aabb = np.dot(aabb, transform.T)
 
     return aabb
-
 
 
 def build_tileset_quadtree(out_folder, aabb, tilesets, base_transform, inv_base_transform, name):
@@ -225,7 +225,7 @@ def build_tileset_quadtree(out_folder, aabb, tilesets, base_transform, inv_base_
             np.concatenate((xyz.view(np.uint8).ravel(), rgb.ravel())),
             out_folder,
             rgb.shape[0] > 0)[1]
-        result['content'] = { 'uri': os.path.relpath(filename, out_folder) }
+        result['content'] = {'uri': os.path.relpath(filename, out_folder)}
         result['geometricError'] = sum([t['root']['geometricError'] for t in insides])
         result['boundingVolume'] = _3dtiles_bounding_box_from_aabb(union_aabb, inv_base_transform)
 

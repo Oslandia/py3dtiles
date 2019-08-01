@@ -94,7 +94,6 @@ class Node(object):
             return self.grid.needs_balance()
         return False
 
-
     def flush_pending_points(self, catalog, scale):
         for name, xyz, rgb in self._get_pending_points():
             catalog.get_node(name).insert(catalog, scale, xyz, rgb)

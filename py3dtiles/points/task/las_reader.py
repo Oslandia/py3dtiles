@@ -47,18 +47,16 @@ def init(args):
                 color_test_field = 'intensity'
                 color_scale = 1.0 / 255
 
-
         _1M = min(count, 1000000)
         steps = math.ceil(count / _1M)
         portions = [(i * _1M, min(count, (i + 1) * _1M)) for i in range(steps)]
         for p in portions:
             pointcloud_file_portions += [(filename, p)]
 
-        if (args.srs_out is not None and
-                input_srs is None):
+        if (args.srs_out is not None and input_srs is None):
             f = liblas.file.File(filename)
-            if (f.header.srs.proj4 is not None and
-                f.header.srs.proj4 != ''):
+            if (f.header.srs.proj4 is not None
+                    and f.header.srs.proj4 != ''):
                 input_srs = pyproj.Proj(f.header.srs.proj4)
             else:
                 raise Exception('\'{}\' file doesn\'t contain srs information. Please use the --srs_in option to declare it.'.format(filename))
@@ -71,7 +69,6 @@ def init(args):
         'point_count': total_point_count,
         'avg_min': avg_min
     }
-
 
 
 def run(_id, filename, offset_scale, portion, queue, projection, verbose):
@@ -144,13 +141,12 @@ def run(_id, filename, offset_scale, portion, queue, projection, verbose):
 
             colors = np.vstack((red, green, blue)).transpose()
 
-            result = (''.encode('ascii'), pdumps({'xyz': coords, 'rgb': colors}), len(coords))
             queue.send_multipart([
                 ''.encode('ascii'),
                 pdumps({'xyz': coords, 'rgb': colors}),
                 struct.pack('>I', len(coords))], copy=False)
 
-        queue.send_multipart([pdumps({ 'name': _id, 'total': 0 })])
+        queue.send_multipart([pdumps({'name': _id, 'total': 0})])
         # notify we're idle
         queue.send_multipart([b''])
 

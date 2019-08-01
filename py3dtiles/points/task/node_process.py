@@ -46,6 +46,7 @@ def _flush(node_catalog, scale, node, queue, max_depth=1, force_forward=False, l
 
     return total
 
+
 def _balance(node_catalog, node, max_depth=1, depth=0):
     if depth >= max_depth:
         return 0

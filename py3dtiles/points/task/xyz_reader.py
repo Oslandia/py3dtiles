@@ -146,11 +146,6 @@ def run(_id, filename, offset_scale, portion, queue, projection, verbose):
             # Read colors: 3 last columns of the point cloud
             colors = points[:, -3:].astype(np.uint8)
 
-            result = (
-                "".encode("ascii"),
-                pdumps({"xyz": coords, "rgb": colors}),
-                len(coords),
-            )
             queue.send_multipart(
                 [
                     "".encode("ascii"),

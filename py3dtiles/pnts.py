@@ -57,7 +57,7 @@ class Pnts(Tile):
 
         # build tile body
         b_len = h.ft_json_byte_length + h.ft_bin_byte_length
-        b_arr = array[PntsHeader.BYTELENGTH:PntsHeader.BYTELENGTH+b_len]
+        b_arr = array[PntsHeader.BYTELENGTH:PntsHeader.BYTELENGTH + b_len]
         b = PntsBody.from_array(h, b_arr)
 
         # build Tile with header and body
@@ -103,8 +103,8 @@ class PntsHeader(TileHeader):
         ftb_arr = body.feature_table.body.to_array()
 
         # sync the tile header with feature table contents
-        self.tile_byte_length = (len(fth_arr) + len(ftb_arr) +
-                                 PntsHeader.BYTELENGTH)
+        self.tile_byte_length = (len(fth_arr) + len(ftb_arr)
+                                 + PntsHeader.BYTELENGTH)
         self.ft_json_byte_length = len(fth_arr)
         self.ft_bin_byte_length = len(ftb_arr)
 

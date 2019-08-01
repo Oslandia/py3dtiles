@@ -6,6 +6,7 @@ from io import StringIO
 
 def profile(func):
     from line_profiler import LineProfiler
+
     def wrapper(*args, **kwargs):
         lp = LineProfiler()
         deco = lp(func)
@@ -22,9 +23,9 @@ class SubdivisionType(Enum):
     QUADTREE = 2
 
 
-def name_to_filename(working_dir, nameb, suffix = ''):
+def name_to_filename(working_dir, nameb, suffix=''):
     name = nameb.decode('ascii')
-    fullpath = [name[i:i+8] for i in range(0, len(name), 8)] if name else ['']
+    fullpath = [name[i:i + 8] for i in range(0, len(name), 8)] if name else ['']
     folder = '{}/{}/'.format(
         working_dir,
         '/'.join(fullpath[:-1]))
@@ -83,5 +84,5 @@ def node_from_name(name, parent_aabb, parent_spacing):
     from .node import Node
     spacing = parent_spacing * 0.5
     aabb = split_aabb(parent_aabb, int(name[-1])) if len(name) > 0 else parent_aabb
-    # let's build a new Node
+    #  let's build a new Node
     return Node(name, aabb, spacing)
