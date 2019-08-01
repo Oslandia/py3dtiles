@@ -205,13 +205,13 @@ class B3dmBody(TileBody):
 
         # build batch table
         bt_len = th.bt_json_byte_length + th.bt_bin_byte_length
-        # bt_arr = array[ft_len:ft_len+bt_len]
+        # bt_arr = array[ft_len:ft_len + bt_len]
         # bt = BatchTable.from_array(th, bt_arr)
 
         # build glTF
         glTF_len = (th.tile_byte_length - ft_len - bt_len
                     - B3dmHeader.BYTELENGTH)
-        glTF_arr = array[ft_len+bt_len:ft_len+bt_len+glTF_len]
+        glTF_arr = array[ft_len + bt_len:ft_len + bt_len + glTF_len]
         glTF = GlTF.from_array(glTF_arr)
 
         # build tile body with feature table

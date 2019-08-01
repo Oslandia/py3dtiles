@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import argparse
 import psycopg2
 import getpass
 import math
@@ -19,14 +18,14 @@ class BoundingBox():
 
     def inside(self, point):
         return ((self.min[0] <= point[0] < self.max[0])
-            and (self.min[1] <= point[1] < self.max[1]))
+                and (self.min[1] <= point[1] < self.max[1]))
 
     def center(self):
-        return [(i + j) / 2 for (i,j) in zip(self.min, self.max)]
+        return [(i + j) / 2 for (i, j) in zip(self.min, self.max)]
 
     def add(self, box):
-        self.min = [min(i,j) for (i,j) in zip(self.min, box.min)]
-        self.max = [max(i,j) for (i,j) in zip(self.max, box.max)]
+        self.min = [min(i, j) for (i, j) in zip(self.min, box.min)]
+        self.max = [max(i, j) for (i, j) in zip(self.max, box.max)]
 
 
 class Feature():
@@ -273,7 +272,7 @@ def from_db(db_name, table_name, column_name, id_column_name, user_name):
 
 def from_directory(directory, offset):
     # TODO: improvement -> order wkbs by geometry size, similarly to database mode
-    offset = (0,0,0) if offset is None else offset
+    offset = (0, 0, 0) if offset is None else offset
     # open all wkbs from directory
     files = os.listdir(directory)
     files = [os.path.join(directory, f) for f in os.listdir(directory)]

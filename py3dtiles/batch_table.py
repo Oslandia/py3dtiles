@@ -22,6 +22,6 @@ class BatchTable(object):
         # convert dict to json string
         bt_json = json.dumps(self.header, separators=(',', ':'))
         # header must be 4-byte aligned (refer to batch table documentation)
-        bt_json += ' '*(4 - len(bt_json) % 4)
+        bt_json += ' ' * (4 - len(bt_json) % 4)
         # returns an array of binaries representing the batch table
         return np.fromstring(bt_json, dtype=np.uint8)

@@ -7,7 +7,7 @@ python:
 
 before_install:
   - sudo add-apt-repository universe
-  - sudo apt-get install -y liblas-c3 libopenblas-base
+  - sudo apt-get install -y liblas-c3 libopenblas-base flake8
 
 install:
   - pip install -e .
@@ -15,6 +15,7 @@ install:
 
 script:
   - pytest
+  - flake8 setup.py py3dtiles/
   - py3dtiles info tests/pointCloudRGB.pnts
 
 addons:

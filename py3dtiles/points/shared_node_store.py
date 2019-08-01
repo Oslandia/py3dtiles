@@ -37,12 +37,11 @@ class SharedNodeStore:
 
         if verbose >= 2:
             print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> CACHE CLEANING [{}]'.format(before))
-        dropped = self.remove_oldest_nodes(1 - max_size_MB / before)
+        self.remove_oldest_nodes(1 - max_size_MB / before)
         gc.collect()
 
         if verbose >= 2:
             print('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< CACHE CLEANING')
-
 
     def get(self, name, stat_inc=1):
         metadata = self.metadata.get(name, None)
@@ -58,7 +57,7 @@ class SharedNodeStore:
                     data = f.read()
             else:
                 self.stats['new'] += stat_inc
-            # should we cache this node?
+            #  should we cache this node?
 
         return data
 
@@ -107,6 +106,7 @@ class SharedNodeStore:
             self.stats['hit'],
             self.stats['miss'],
             self.stats['new']))
+
 
 def _remove_all(store):
     # delete the entries

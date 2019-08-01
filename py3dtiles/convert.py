@@ -42,7 +42,6 @@ def write_tileset(in_folder, out_folder, octree_metadata, offset, scale, project
             ondisk_tile = name_to_filename(out_folder, child.encode('ascii'), '.pnts')
             if os.path.exists(ondisk_tile):
                 tile = TileReader().read_file(ondisk_tile)
-                th = tile.header
                 fth = tile.body.feature_table.header
                 xyz = tile.body.feature_table.body.positions_arr.view(np.float32).reshape((fth.points_length, 3))
                 if include_rgb:
@@ -198,9 +197,9 @@ def is_ancestor_in_list(ln, node_name, d):
 def can_pnts_be_written(name, finished_node, input_nodes, active_nodes):
     ln = len(name)
     return (
-        is_ancestor(ln, len(finished_node), name, finished_node) and
-        not is_ancestor_in_list(ln, name, active_nodes) and
-        not is_ancestor_in_list(ln, name, input_nodes))
+        is_ancestor(ln, len(finished_node), name, finished_node)
+        and not is_ancestor_in_list(ln, name, active_nodes)
+        and not is_ancestor_in_list(ln, name, input_nodes))
 
 
 Reader = namedtuple('Reader', ['input', 'active'])
@@ -513,7 +512,6 @@ def main(args):
                 count = struct.unpack('>I', result[2])[0]
                 add_tasks_to_process(state, result[0], result[1], count)
 
-
         while state.to_pnts.input and can_queue_more_jobs(zmq_idle_clients):
             node_name = state.to_pnts.input.pop()
             datas = node_store.get(node_name)
@@ -521,7 +519,6 @@ def main(args):
             zmq_send_to_process(zmq_idle_clients, zmq_skt, [b'pnts', node_name, datas])
             node_store.remove(node_name)
             state.to_pnts.active.append(node_name)
-
 
         if can_queue_more_jobs(zmq_idle_clients):
             potential = sorted(
@@ -552,10 +549,10 @@ def main(args):
                 if job_list:
                     zmq_send_to_process(zmq_idle_clients, zmq_skt, job_list)
 
-        while (state.reader.input and
-           (points_in_progress < 60000000 or not state.reader.active) and
-           len(state.reader.active) < max_splitting_jobs_count and
-           can_queue_more_jobs(zmq_idle_clients)):
+        while (state.reader.input
+               and (points_in_progress < 60000000 or not state.reader.active)
+               and len(state.reader.active) < max_splitting_jobs_count
+               and can_queue_more_jobs(zmq_idle_clients)):
             if args.verbose >= 1:
                 print('Submit next portion {}'.format(state.reader.input[-1]))
             _id = 'root_{}'.format(len(state.reader.input)).encode('ascii')
@@ -564,10 +561,10 @@ def main(args):
 
             zmq_send_to_process(zmq_idle_clients, zmq_skt, [pickle.dumps({
                 'filename': file,
-                'offset_scale': (-avg_min, root_scale, rotation_matrix[:3,:3].T if rotation_matrix is not None else None, infos['color_scale']),
+                'offset_scale': (-avg_min, root_scale, rotation_matrix[:3, :3].T if rotation_matrix is not None else None, infos['color_scale']),
                 'portion': portion,
                 'id': _id
-                })])
+            })])
 
             state.reader.active.append(_id)
 
@@ -578,7 +575,7 @@ def main(args):
                 zmq_processes_killed = 0
             else:
                 assert points_in_pnts == infos['point_count'], '!!! Invalid point count in the written .pnts (expected: {}, was: {})'.format(
-                        infos['point_count'], points_in_pnts)
+                    infos['point_count'], points_in_pnts)
                 if args.verbose >= 1:
                     print('Writing 3dtiles {}'.format(infos['avg_min']))
                 write_tileset(working_dir,
@@ -653,9 +650,8 @@ def main(args):
     # pygal chart
     if args.graph:
         import pygal
-        from datetime import timedelta
 
-        dateline = pygal.XY(x_label_rotation=25, secondary_range=(0, 100)) #, show_y_guides=False)
+        dateline = pygal.XY(x_label_rotation=25, secondary_range=(0, 100))  # , show_y_guides=False)
         for pid in activities:
             activity = []
             filename = 'activity.{}.csv'.format(pid)
@@ -683,13 +679,12 @@ def main(args):
                     line = line.split(',')
                     values += [(float(line[0]), float(line[1]))]
         os.remove('progression.csv')
-        dateline.add('progression', values, show_dots=False, secondary=True, stroke_style={'width':2, 'color': 'black'})
-
+        dateline.add('progression', values, show_dots=False, secondary=True, stroke_style={'width': 2, 'color': 'black'})
 
         dateline.render_to_file('activity.svg')
 
     context.destroy()
 
+
 if __name__ == '__main__':
     main()
-

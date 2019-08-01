@@ -14,7 +14,7 @@ class GlTF(object):
         scene = json.dumps(self.header, separators=(',', ':'))
 
         # body must be 4-byte aligned
-        scene += ' '*((4 - len(scene) % 4) % 4)
+        scene += ' ' * ((4 - len(scene) % 4) % 4)
 
         padding = np.array([0 for i in range(0, (4 - len(self.body) % 4) % 4)],
                            dtype=np.uint8)
@@ -64,9 +64,9 @@ class GlTF(object):
             raise RuntimeError("Unsupported binary glTF content type")
 
         header = struct.unpack(str(content_length) + "s",
-                               array[20:20+content_length])[0]
+                               array[20:20 + content_length])[0]
         glTF.header = json.loads(header.decode("ascii"))
-        glTF.body = array[20+content_length:length]
+        glTF.body = array[20 + content_length:length]
 
         return glTF
 
