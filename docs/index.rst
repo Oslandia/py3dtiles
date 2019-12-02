@@ -1,7 +1,7 @@
 Welcome to py3dtiles's documentation!
 =====================================
 
-p3dtiles is a Python tool and library for manipulating `3D Tiles`_.
+Py3dtiles is a Python tool and library for manipulating `3D Tiles`_.
 
 .. _3D Tiles: https://github.com/AnalyticalGraphicsInc/3d-tiles
 
@@ -16,8 +16,6 @@ p3dtiles is a Python tool and library for manipulating `3D Tiles`_.
 * Read/write pointcloud (pnts) and batched 3d model format
 
 py3dtiles is distributed under the Apache 2 Licence.
-
-GitHub repository: https://github.com/Oslandia/py3dtiles
 
 .. toctree::
    :maxdepth: 2
