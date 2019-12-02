@@ -29,10 +29,6 @@ dev_requirements = (
 
 doc_requirements = (
     'sphinx',
-    'sphinx_rtd_theme',
-)
-
-prod_requirements = (
 )
 
 
@@ -78,7 +74,6 @@ setup(
     test_suite="tests",
     extras_require={
         'dev': dev_requirements,
-        'prod': prod_requirements,
         'doc': doc_requirements
     },
     entry_points={
