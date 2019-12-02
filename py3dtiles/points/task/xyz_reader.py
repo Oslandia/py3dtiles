@@ -6,16 +6,13 @@ import struct
 from pickle import dumps as pdumps
 
 
-def init(args):
+def init(files, color_scale=None, srs_in=None, srs_out=None, fraction=100):
     aabb = None
     total_point_count = 0
     pointcloud_file_portions = []
     avg_min = np.array([0.0, 0.0, 0.0])
-    color_scale = args.color_scale if "color_scale" in args else None
 
-    input_srs = args.srs_in
-
-    for filename in args.files:
+    for filename in files:
         try:
             f = open(filename, "r")
         except Exception as e:
@@ -56,7 +53,7 @@ def init(args):
                 aabb[1] = np.maximum(aabb[1], batch_aabb[1])
 
         # We need an exact point count
-        total_point_count += count * args.fraction / 100
+        total_point_count += count * fraction / 100
 
         _1M = min(count, 1000000)
         steps = math.ceil(count / _1M)
@@ -67,7 +64,7 @@ def init(args):
         for p in portions:
             pointcloud_file_portions += [(filename, p)]
 
-        if args.srs_out is not None and input_srs is None:
+        if srs_out is not None and srs_in is None:
             raise Exception(
                 "'{}' file doesn't contain srs information. Please use the --srs_in option to declare it.".format(
                     filename
@@ -78,7 +75,7 @@ def init(args):
         "portions": pointcloud_file_portions,
         "aabb": aabb,
         "color_scale": color_scale,
-        "srs_in": input_srs,
+        "srs_in": srs_in,
         "point_count": total_point_count,
         "avg_min": aabb[0],
     }

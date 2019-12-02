@@ -9,23 +9,20 @@ import liblas
 from pickle import dumps as pdumps
 
 
-def init(args):
+def init(files, color_scale=None, srs_in=None, srs_out=None, fraction=100):
     aabb = None
     total_point_count = 0
     pointcloud_file_portions = []
     avg_min = np.array([0., 0., 0.])
-    color_scale = args.color_scale if 'color_scale' in args else None
 
-    input_srs = args.srs_in
-
-    for filename in args.files:
+    for filename in files:
         try:
             f = File(filename, mode='r')
         except Exception as e:
             print('Error opening {filename}. Skipping.'.format(**locals()))
             print(e)
             continue
-        avg_min += (np.array(f.header.min) / len(args.files))
+        avg_min += (np.array(f.header.min) / len(files))
 
         if aabb is None:
             aabb = np.array([f.header.get_min(), f.header.get_max()])
@@ -34,7 +31,7 @@ def init(args):
             aabb[0] = np.minimum(aabb[0], bb[0])
             aabb[1] = np.maximum(aabb[1], bb[1])
 
-        count = int(f.header.count * args.fraction / 100)
+        count = int(f.header.count * fraction / 100)
         total_point_count += count
 
         # read the first points red channel
@@ -53,11 +50,11 @@ def init(args):
         for p in portions:
             pointcloud_file_portions += [(filename, p)]
 
-        if (args.srs_out is not None and input_srs is None):
+        if (srs_out is not None and srs_in is None):
             f = liblas.file.File(filename)
             if (f.header.srs.proj4 is not None
                     and f.header.srs.proj4 != ''):
-                input_srs = pyproj.Proj(f.header.srs.proj4)
+                srs_in = pyproj.Proj(f.header.srs.proj4)
             else:
                 raise Exception('\'{}\' file doesn\'t contain srs information. Please use the --srs_in option to declare it.'.format(filename))
 
@@ -65,7 +62,7 @@ def init(args):
         'portions': pointcloud_file_portions,
         'aabb': aabb,
         'color_scale': color_scale,
-        'srs_in': input_srs,
+        'srs_in': srs_in,
         'point_count': total_point_count,
         'avg_min': avg_min
     }
