@@ -26,7 +26,7 @@ py3dtiles is distributed under the Apache 2 Licence.
 
 GitHub repository: https://github.com/Oslandia/py3dtiles
 
-documentation : https://oslandia.github.io/py3dtiles
+Documentation : https://oslandia.github.io/py3dtiles
 
 Docs
 ----
