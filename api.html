@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>API usage &#8212; py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Command line usage" href="cli.html" />
+    <link rel="prev" title="Install" href="install.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="cli.html" title="Command line usage"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Install"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="api-usage">
+<span id="api"></span><h1>API usage<a class="headerlink" href="#api-usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="generic-tile">
+<h2>Generic Tile<a class="headerlink" href="#generic-tile" title="Permalink to this headline">¶</a></h2>
+<p>The py3dtiles module provides some classes to fit into the
+specification:</p>
+<ul class="simple">
+<li><p><em>Tile</em> with a header <em>TileHeader</em> and a body <em>TileBody</em></p></li>
+<li><p><em>TileHeader</em> represents the metadata of the tile (magic value, version, …)</p></li>
+<li><p><em>TileBody</em> contains varying semantic and geometric data depending on the the tile’s type</p></li>
+</ul>
+<p>Moreover, a utility class <em>TileReader</em> is available to read a tile
+file as well as a simple command line tool to retrieve basic information
+about a tile: <strong>py3dtiles_info</strong>. We also provide a utility to generate a
+tileset from a list of 3D models in WKB format or stored in a postGIS table.</p>
+</div>
+<div class="section" id="point-cloud">
+<h2>Point Cloud<a class="headerlink" href="#point-cloud" title="Permalink to this headline">¶</a></h2>
+<p>Points Tile Format:
+<a class="reference external" href="https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification/TileFormats/PointCloud">https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/specification/TileFormats/PointCloud</a></p>
+<p>In the current implementation, the <em>Pnts</em> class only contains a <em>FeatureTable</em>
+(<em>FeatureTableHeader</em> and a <em>FeatureTableBody</em>, which contains features of type
+<em>Feature</em>).</p>
+<p><strong>How to read a .pnts file</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileReader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">Pnts</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;tests/pointCloudRGB.pnts&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># read the file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span> <span class="o">=</span> <span class="n">TileReader</span><span class="p">()</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># tile is an instance of the Tile class</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span>
+<span class="go">&lt;py3dtiles.tile.Tile&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract information about the tile header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span>
+<span class="go">&lt;py3dtiles.tile.TileHeader&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span><span class="o">.</span><span class="n">magic_value</span>
+<span class="go">&#39;pnts&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span><span class="o">.</span><span class="n">tile_byte_length</span>
+<span class="go">15176</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract the feature table</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ft</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ft</span>
+<span class="go">&lt;py3dtiles.feature_table.FeatureTable</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># display feature table header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ft</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+<span class="go">{&#39;RTC_CENTER&#39;: [1215012.8828876738, -4736313.051199594, 4081605.22126042],</span>
+<span class="go">&#39;RGB&#39;: {&#39;byteOffset&#39;: 12000}, &#39;POINTS_LENGTH&#39;: 1000, &#39;POSITION&#39;: {&#39;byteOffset&#39;: 0}}</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract positions and colors of the first point</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">ft</span><span class="o">.</span><span class="n">feature</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+<span class="go">&lt;py3dtiles.feature_table.Feature&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">positions</span>
+<span class="go">{&#39;Y&#39;: 4.4896851, &#39;X&#39;: 2.19396, &#39;Z&#39;: -0.17107764}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">colors</span>
+<span class="go">{&#39;Green&#39;: 243, &#39;Red&#39;: 44, &#39;Blue&#39;: 209}</span>
+</pre></div>
+</div>
+<p><strong>How to write a .pnts file</strong></p>
+<p>To write a Point Cloud file, you have to build a numpy array with the
+corresponding data type.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">Feature</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create the numpy dtype for positions with 32-bit floating point numbers</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">dt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s1">&#39;X&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f4&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Y&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f4&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;Z&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;f4&#39;</span><span class="p">)])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create a position array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([(</span><span class="mf">4.489</span><span class="p">,</span> <span class="mf">2.19</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.17</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create a new feature from a uint8 numpy array</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span> <span class="o">=</span> <span class="n">Feature</span><span class="o">.</span><span class="n">from_array</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s1">&#39;uint8&#39;</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span>
+<span class="go">&lt;py3dtiles.feature_table.Feature&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">positions</span>
+<span class="go">{&#39;Y&#39;: 2.19, &#39;X&#39;: 4.489, &#39;Z&#39;: -0.17}</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create a tile directly from our feature. None is for &quot;no colors&quot;.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span>  <span class="o">=</span> <span class="n">Pnts</span><span class="o">.</span><span class="n">from_features</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[</span><span class="n">f</span><span class="p">])</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># the tile is complete</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span><span class="o">.</span><span class="n">header</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
+<span class="go">{&#39;POINTS_LENGTH&#39;: 1, &#39;POSITION&#39;: {&#39;byteOffset&#39;: 0}}</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># to save our tile as a .pnts file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span><span class="s2">&quot;mypoints.pnts&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="batched-3d-model">
+<h2>Batched 3D Model<a class="headerlink" href="#batched-3d-model" title="Permalink to this headline">¶</a></h2>
+<p>Batched 3D Model Tile Format:
+<a class="reference external" href="https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/Batched3DModel">https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/Batched3DModel</a></p>
+<p><strong>How to read a .b3dm file</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileReader</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">B3dm</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;tests/dragon_low.b3dm&#39;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># read the file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span> <span class="o">=</span> <span class="n">TileReader</span><span class="p">()</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># tile is an instance of the Tile class</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span>
+<span class="go">&lt;py3dtiles.tile.Tile&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract information about the tile header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span>
+<span class="go">&lt;py3dtiles.b3dm.B3dmHeader&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span><span class="o">.</span><span class="n">magic_value</span>
+<span class="go">&#39;b3dm&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span><span class="o">.</span><span class="n">tile_byte_length</span>
+<span class="go">47246</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract the glTF</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">glTF</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span>
+<span class="go">&lt;py3dtiles.gltf.GlTF&gt;</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># display gltf header&#39;s asset field</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s1">&#39;asset&#39;</span><span class="p">]</span>
+<span class="go">{&#39;premultipliedAlpha&#39;: True, &#39;profile&#39;: {&#39;version&#39;: &#39;1.0&#39;, &#39;api&#39;: &#39;WebGL&#39;}, &#39;version&#39;: &#39;1.0&#39;, &#39;generator&#39;: &#39;OBJ2GLTF&#39;}</span>
+</pre></div>
+</div>
+<p><strong>How to write a .b3dm file</strong></p>
+<p>To write a Batched 3D Model file, you have to import the geometry from a wkb
+file containing polyhedralsurfaces or multipolygons.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">GlTF</span><span class="p">,</span> <span class="n">TriangleSoup</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># load a wkb file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">wkb</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;tests/building.wkb&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># define the geometry&#39;s bouding box</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">box</span> <span class="o">=</span> <span class="p">[[</span><span class="o">-</span><span class="mf">8.75</span><span class="p">,</span> <span class="o">-</span><span class="mf">7.36</span><span class="p">,</span> <span class="o">-</span><span class="mf">2.05</span><span class="p">],</span> <span class="p">[</span><span class="mf">8.80</span><span class="p">,</span> <span class="mf">7.30</span><span class="p">,</span> <span class="mf">2.05</span><span class="p">]]</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># define the geometry&#39;s world transformation</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+<span class="gp">... </span>            <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1842015.125</span><span class="p">],</span>
+<span class="gp">... </span>            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">5177109.25</span><span class="p">],</span>
+<span class="gp">... </span>            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">247.87364196777344</span><span class="p">],</span>
+<span class="gp">... </span>            <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">transform</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="s1">&#39;F&#39;</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># use the TriangleSoup helper class to transform the wkb into arrays</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># of points and normals</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">TriangleSoup</span><span class="o">.</span><span class="n">from_wkb_multipolygon</span><span class="p">(</span><span class="n">wkb</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">positions</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">getPositionArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">normals</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">getNormalArray</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># generate the glTF part from the binary arrays.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># notice that from_binary_arrays accepts array of geometries</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># for batching purposes.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">geometry</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="n">positions</span><span class="p">,</span> <span class="s1">&#39;normal&#39;</span><span class="p">:</span> <span class="n">normals</span><span class="p">,</span> <span class="s1">&#39;bbox&#39;</span><span class="p">:</span> <span class="n">box</span> <span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span> <span class="o">=</span> <span class="n">GlTF</span><span class="o">.</span><span class="n">from_binary_arrays</span><span class="p">([</span><span class="n">geometry</span><span class="p">],</span> <span class="n">transform</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create a b3dm tile directly from the glTF.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">B3dm</span><span class="o">.</span><span class="n">from_glTF</span><span class="p">(</span><span class="n">glTF</span><span class="p">)</span>
+<span class="go">&gt;&gt;&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># to save our tile as a .b3dm file</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span><span class="o">.</span><span class="n">save_as</span><span class="p">(</span><span class="s2">&quot;mymodel.b3dm&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">API usage</a><ul>
+<li><a class="reference internal" href="#generic-tile">Generic Tile</a></li>
+<li><a class="reference internal" href="#point-cloud">Point Cloud</a></li>
+<li><a class="reference internal" href="#batched-3d-model">Batched 3D Model</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="install.html"
+                        title="previous chapter">Install</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="cli.html"
+                        title="next chapter">Command line usage</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/api.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="cli.html" title="Command line usage"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="install.html" title="Install"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludovic Delauné, Nicolas Saul, Pierre-Éric Pelloux-Prayer, Raphaël Delhome, Vincent Jaillot, Éric Lemoine.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
+    </div>
+  </body>
+</html>

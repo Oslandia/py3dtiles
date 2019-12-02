@@ -1,0 +1,155 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Command line usage &#8212; py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="command-line-usage">
+<h1>Command line usage<a class="headerlink" href="#command-line-usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="info">
+<h2>info<a class="headerlink" href="#info" title="Permalink to this headline">¶</a></h2>
+<p>Here is an example on how to retrieve basic information about a tile, in this
+case <em>pointCloudRGB.pnts</em>:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ py3dtiles info tests/pointCloudRGB.pnts
+Tile Header
+-----------
+Magic Value:  pnts
+Version:  <span class="m">1</span>
+Tile byte length:  <span class="m">15176</span>
+Feature table json byte length:  <span class="m">148</span>
+Feature table bin byte length:  <span class="m">15000</span>
+
+Feature Table Header
+--------------------
+<span class="o">{</span><span class="s1">&#39;POSITION&#39;</span>: <span class="o">{</span><span class="s1">&#39;byteOffset&#39;</span>: <span class="m">0</span><span class="o">}</span>, <span class="s1">&#39;RGB&#39;</span>: <span class="o">{</span><span class="s1">&#39;byteOffset&#39;</span>: <span class="m">12000</span><span class="o">}</span>, <span class="s1">&#39;POINTS_LENGTH&#39;</span>: <span class="m">1000</span>, <span class="s1">&#39;RTC_CENTER&#39;</span>: <span class="o">[</span><span class="m">1215012</span>.8828876738, -4736313.051199594, <span class="m">4081605</span>.22126042<span class="o">]}</span>
+
+First point
+-----------
+<span class="o">{</span><span class="s1">&#39;Z&#39;</span>: -0.17107764, <span class="s1">&#39;Red&#39;</span>: <span class="m">44</span>, <span class="s1">&#39;X&#39;</span>: <span class="m">2</span>.19396, <span class="s1">&#39;Y&#39;</span>: <span class="m">4</span>.4896851, <span class="s1">&#39;Green&#39;</span>: <span class="m">243</span>, <span class="s1">&#39;Blue&#39;</span>: <span class="m">209</span><span class="o">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="convert">
+<h2>convert<a class="headerlink" href="#convert" title="Permalink to this headline">¶</a></h2>
+<p>The convert sub-command can be used to convert one or several .las file to a 3dtiles tileset.</p>
+<p>It also support crs reprojection of the points (see py3dtiles convert –help for all the options).</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>py3dtiles convert mypointcloud.las --out /tmp/destination
+</pre></div>
+</div>
+</div>
+<div class="section" id="merge">
+<h2>merge<a class="headerlink" href="#merge" title="Permalink to this headline">¶</a></h2>
+<p>The merge feature is a special use case: it generates a meta-tileset from a group of existing tilesets.</p>
+<dl>
+<dt>It’s useful to be able only a part of a pointcloud. For instance: if one has 6 input las file (A.las, B.las, …, F.las), there are 2 solutions to vizualize them all in a 3dtiles viewer:</dt><dd><ul class="simple">
+<li><p>run <cite>py3dtiles convert A.las B.las … F.las</cite> and diplay the resulting tileset</p></li>
+<li><p>or run <cite>py3dtiles convert A.las</cite>, then <cite>py3dtiles convert B.las</cite>, … and then run <cite>py3dtiles merge</cite></p></li>
+</ul>
+<p>The advantage of the 2nd option, is that it allows to update a part of the pointcloud easily.
+e.g: if a new B.las is available, with option 1 the full tileset has to be rebuild from scratch, while with option 2, only the B.las part has to be rebuilt + the merge command.</p>
+</dd>
+</dl>
+</div>
+<div class="section" id="export">
+<h2>export<a class="headerlink" href="#export" title="Permalink to this headline">¶</a></h2>
+<p>Two export modes are available, the database export or the directory export.
+They both transform all the geometries provided in .b3dm files, along with a
+tileset.json file which organizes them.</p>
+<p>The directory export will use all the .wkb files in the provided directory.
+Warning: the coordinates are read as floats, not doubles. Make sure to offset
+the coordinates beforehand to reduce their size. Afterwards, you can indicate
+in the command line the offset that needs to be applied to the tileset so it is
+correctly placed. Usage example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ export_tileset -d my_directory -o <span class="m">10000</span> <span class="m">10000</span> <span class="m">0</span>
+</pre></div>
+</div>
+<p>The database export requires a user name, a database name, the name of the table
+and its column that contains the geometry and (optionaly) the name of the column
+that contains the object’s ID. Usage example:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>$ export_tileset -D database -t my_city -c geom -i id -u oslandia
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Command line usage</a><ul>
+<li><a class="reference internal" href="#info">info</a></li>
+<li><a class="reference internal" href="#convert">convert</a></li>
+<li><a class="reference internal" href="#merge">merge</a></li>
+<li><a class="reference internal" href="#export">export</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/cli.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="index.html">py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludovic Delauné, Nicolas Saul, Pierre-Éric Pelloux-Prayer, Raphaël Delhome, Vincent Jaillot, Éric Lemoine.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 2.2.1.
+    </div>
+  </body>
+</html>
