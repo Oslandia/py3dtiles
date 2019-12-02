@@ -29,6 +29,7 @@ dev_requirements = (
 
 doc_requirements = (
     'sphinx',
+    'sphinx_rtd_theme',
 )
 
 
