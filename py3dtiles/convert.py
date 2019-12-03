@@ -248,7 +248,7 @@ def init_parser(subparser, str2bool):
     parser.add_argument(
         'files',
         nargs='+',
-        help='Filenames to process. The file must use the .las format.')
+        help='Filenames to process. The file must use the .las or .xyz format.')
     parser.add_argument(
         '--out',
         type=str,
@@ -261,18 +261,18 @@ def init_parser(subparser, str2bool):
         type=str2bool)
     parser.add_argument(
         '--jobs',
-        help='The number of parallel jobs to start.',
+        help='The number of parallel jobs to start. Default to the number of cpu.',
         default=multiprocessing.cpu_count(),
         type=int)
     parser.add_argument(
         '--cache_size',
-        help='Cache size in MB',
+        help='Cache size in MB. Default to available memory / 10.',
         default=int(total_memory_MB / 10),
         type=int)
     parser.add_argument(
-        '--srs_out', help='SRS to use as output (EPSG code)', type=str)
+        '--srs_out', help='SRS to convert the output with (numeric part of the EPSG code)', type=str)
     parser.add_argument(
-        '--srs_in', help='Override input SRS (EPSG code)', type=str)
+        '--srs_in', help='Override input SRS (numeric part of the EPSG code)', type=str)
     parser.add_argument(
         '--fraction',
         help='Percentage of the pointcloud to process.',
@@ -293,7 +293,7 @@ def init_parser(subparser, str2bool):
 
 def main(args):
     return convert(args.files,
-                   folder=args.out,
+                   outfolder=args.out,
                    overwrite=args.overwrite,
                    jobs=args.jobs,
                    cache_size=args.cache_size,
@@ -308,7 +308,7 @@ def main(args):
 
 
 def convert(files,
-            folder='./3dtiles',
+            outfolder='./3dtiles',
             overwrite=False,
             jobs=multiprocessing.cpu_count(),
             cache_size=int(total_memory_MB / 10),
@@ -320,17 +320,47 @@ def convert(files,
             graph=False,
             color_scale=None,
             verbose=False):
+    """convert
+
+    Convert pointclouds (xyz or las) to 3dtiles tileset containing pnts node
+
+    :param files: Filenames to process. The file must use the .las or .xyz format.
+    :type files: list of str
+    :param outfolder: The folder where the resulting tileset will be written.
+    :type outfolder: path-like object
+    :param overwrite: Overwrite the ouput folder if it already exists.
+    :type overwrite: bool
+    :param jobs: The number of parallel jobs to start. Default to the number of cpu.
+    :type jobs: int
+    :param cache_size: Cache size in MB. Default to available memory / 10.
+    :type cache_size: int
+    :param srs_out: SRS to convert the output with (numeric part of the EPSG code)
+    :type srs_out: int or str
+    :param srs_in: Override input SRS (numeric part of the EPSG code)
+    :type srs_in: int or str
+    :param fraction: Percentage of the pointcloud to process, between 0 and 100.
+    :type fraction: int
+    :param benchmark: Print summary at the end of the process
+    :type benchmark: str
+    :param rgb: Export rgb attributes.
+    :type rgb: bool
+    :param graph: Produce debug graphes (requires pygal).
+    :type graph: bool
+    :param color_scale: Force color scale
+    :type color_scale: float
+
+    """
 
     # create folder
-    if os.path.isdir(folder):
+    if os.path.isdir(outfolder):
         if overwrite:
-            shutil.rmtree(folder)
+            shutil.rmtree(outfolder)
         else:
-            print('Error, folder \'{}\' already exists'.format(folder))
+            print('Error, folder \'{}\' already exists'.format(outfolder))
             sys.exit(1)
 
-    os.makedirs(folder)
-    working_dir = folder + '/tmp'
+    os.makedirs(outfolder)
+    working_dir = os.path.join(outfolder, 'tmp')
     os.makedirs(working_dir)
 
     node_store = SharedNodeStore(working_dir)
@@ -456,7 +486,7 @@ def convert(files,
     zmq_processes = [multiprocessing.Process(
         target=zmq_process,
         args=(
-            graph, projection, node_store, octree_metadata, folder, rgb, verbose)) for i in range(jobs)]
+            graph, projection, node_store, octree_metadata, outfolder, rgb, verbose)) for i in range(jobs)]
 
     for p in zmq_processes:
         p.start()
@@ -609,7 +639,7 @@ def convert(files,
                 if verbose >= 1:
                     print('Writing 3dtiles {}'.format(infos['avg_min']))
                 write_tileset(working_dir,
-                              folder,
+                              outfolder,
                               octree_metadata,
                               avg_min,
                               root_scale,
