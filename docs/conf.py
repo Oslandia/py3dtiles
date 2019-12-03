@@ -24,7 +24,7 @@ copyright = u'2019, Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludov
 author = u'Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludovic Delauné, Nicolas Saul, Pierre-Éric Pelloux-Prayer, Raphaël Delhome, Vincent Jaillot, Éric Lemoine'
 
 # The short X.Y version
-version = u''
+version = u'master'
 # The full version, including alpha/beta/rc tags
 release = u'1.0.2, 1.0.1, 0.0.9'
 
@@ -89,7 +89,9 @@ html_theme = 'sphinx_rtd_theme'
 # further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+html_theme_options = {
+    'display_version': True
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
