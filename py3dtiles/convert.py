@@ -325,7 +325,7 @@ def convert(files,
     Convert pointclouds (xyz or las) to 3dtiles tileset containing pnts node
 
     :param files: Filenames to process. The file must use the .las or .xyz format.
-    :type files: list of str
+    :type files: list of str, or str
     :param outfolder: The folder where the resulting tileset will be written.
     :type outfolder: path-like object
     :param overwrite: Overwrite the ouput folder if it already exists.
@@ -350,6 +350,9 @@ def convert(files,
     :type color_scale: float
 
     """
+
+    # allow str directly if only one input
+    files = [files] if isinstance(files, str) else files
 
     # create folder
     if os.path.isdir(outfolder):
