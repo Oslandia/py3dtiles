@@ -133,8 +133,8 @@ def zmq_process(activity_graph, projection, node_store, octree_metadata, folder,
                 break
 
             _, ext = os.path.splitext(command['filename'])
-            fn = las_reader.run if ext == '.las' else xyz_reader.run
-            fn(
+            init_reader_fn = las_reader.run if ext == '.las' else xyz_reader.run
+            init_reader_fn(
                 command['id'],
                 command['filename'],
                 command['offset_scale'],
@@ -367,9 +367,8 @@ def convert(files,
 
     # read all input files headers and determine the aabb/spacing
     _, ext = os.path.splitext(files[0])
-    fn = las_reader.init if ext == '.las' else xyz_reader.init
-    # TODO
-    infos = fn(files, color_scale=color_scale, srs_in=srs_in)
+    init_reader_fn = las_reader.init if ext == '.las' else xyz_reader.init
+    infos = init_reader_fn(files, color_scale=color_scale, srs_in=srs_in)
 
     avg_min = infos['avg_min']
     rotation_matrix = None
