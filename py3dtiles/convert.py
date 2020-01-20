@@ -27,6 +27,10 @@ import py3dtiles.points.task.pnts_writer as pnts_writer
 total_memory_MB = int(psutil.virtual_memory().total / (1024 * 1024))
 
 
+class SrsInMissingException(Exception):
+    pass
+
+
 def write_tileset(in_folder, out_folder, octree_metadata, offset, scale, projection, rotation_matrix, include_rgb):
     # compute tile transform matrix
     if rotation_matrix is None:
@@ -292,19 +296,23 @@ def init_parser(subparser, str2bool):
 
 
 def main(args):
-    return convert(args.files,
-                   outfolder=args.out,
-                   overwrite=args.overwrite,
-                   jobs=args.jobs,
-                   cache_size=args.cache_size,
-                   srs_out=args.srs_out,
-                   srs_in=args.srs_in,
-                   fraction=args.fraction,
-                   benchmark=args.benchmark,
-                   rgb=args.rgb,
-                   graph=args.graph,
-                   color_scale=args.color_scale,
-                   verbose=args.verbose)
+    try:
+        return convert(args.files,
+                       outfolder=args.out,
+                       overwrite=args.overwrite,
+                       jobs=args.jobs,
+                       cache_size=args.cache_size,
+                       srs_out=args.srs_out,
+                       srs_in=args.srs_in,
+                       fraction=args.fraction,
+                       benchmark=args.benchmark,
+                       rgb=args.rgb,
+                       graph=args.graph,
+                       color_scale=args.color_scale,
+                       verbose=args.verbose)
+    except SrsInMissingException:
+        print('No SRS information in input files, you should specify it with --srs_in')
+        sys.exit(1)
 
 
 def convert(files,
@@ -349,6 +357,9 @@ def convert(files,
     :param color_scale: Force color scale
     :type color_scale: float
 
+    :raises SrsInMissingException: if py3dtiles couldn't find srs informations in input files and srs_in is not specified
+
+
     """
 
     # allow str directly if only one input
@@ -383,6 +394,8 @@ def convert(files,
             p1 = pyproj.Proj(init='epsg:{}'.format(srs_in))
         else:
             p1 = infos['srs_in']
+        if srs_in is None:
+            raise SrsInMissingException('No SRS informations in the provided files')
         projection = [p1, p2]
 
         bl = np.array(list(pyproj.transform(
