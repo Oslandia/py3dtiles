@@ -274,7 +274,7 @@ class Node(object):
         if executor is not None:
             children = [t for t in executor.map(node_to_tileset, children)]
 
-        if children:
+        if children is not None:
             tileset['children'] = children
         else:
             tileset['geometricError'] = 0.0
