@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
-from pytest import approx
+from pytest import approx, raises
 import shutil
 
 from py3dtiles import convert_to_ecef
-from py3dtiles.convert import convert
+from py3dtiles.convert import convert, SrsInMissingException
 
 
 def test_convert_to_ecef():
@@ -26,4 +26,17 @@ def test_convert():
     shutil.rmtree('./tmp')
 
 
+def test_convert_without_srs():
+    with raises(SrsInMissingException):
+        convert(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'without_srs.las'),
+                outfolder='./tmp',
+                srs_out='4978')
+    assert not os.path.exists(os.path.join('tmp'))
 
+    convert(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'fixtures', 'without_srs.las'),
+            outfolder='./tmp',
+            srs_in='3949',
+            srs_out='4978')
+    assert os.path.exists(os.path.join('tmp', 'tileset.json'))
+    assert os.path.exists(os.path.join('tmp', 'r.pnts'))
+    shutil.rmtree('./tmp')
