@@ -365,20 +365,6 @@ def convert(files,
     # allow str directly if only one input
     files = [files] if isinstance(files, str) else files
 
-    # create folder
-    if os.path.isdir(outfolder):
-        if overwrite:
-            shutil.rmtree(outfolder)
-        else:
-            print('Error, folder \'{}\' already exists'.format(outfolder))
-            sys.exit(1)
-
-    os.makedirs(outfolder)
-    working_dir = os.path.join(outfolder, 'tmp')
-    os.makedirs(working_dir)
-
-    node_store = SharedNodeStore(working_dir)
-
     # read all input files headers and determine the aabb/spacing
     _, ext = os.path.splitext(files[0])
     init_reader_fn = las_reader.init if ext == '.las' else xyz_reader.init
@@ -452,6 +438,20 @@ def convert(files,
     root_spacing = compute_spacing(root_aabb)
 
     octree_metadata = OctreeMetadata(aabb=root_aabb, spacing=root_spacing, scale=root_scale[0])
+
+    # create folder
+    if os.path.isdir(outfolder):
+        if overwrite:
+            shutil.rmtree(outfolder)
+        else:
+            print('Error, folder \'{}\' already exists'.format(outfolder))
+            sys.exit(1)
+
+    os.makedirs(outfolder)
+    working_dir = os.path.join(outfolder, 'tmp')
+    os.makedirs(working_dir)
+
+    node_store = SharedNodeStore(working_dir)
 
     if verbose >= 1:
         print('Summary:')
