@@ -229,14 +229,14 @@ def wkbs2tileset(wkbs, ids, transform):
     arrays2tileset(positions, normals, bboxes, transform, ids)
 
 
-def from_db(db_name, table_name, column_name, id_column_name, user_name):
+def from_db(db_name, table_name, column_name, id_column_name, user_name, host=None, port=None):
     user = getpass.getuser() if user_name is None else user_name
 
     try:
-        connection = psycopg2.connect(dbname=db_name, user=user)
+        connection = psycopg2.connect(dbname=db_name, user=user, host=host, port=port)
     except psycopg2.OperationalError:
         pw = getpass.getpass("Postgres password for user {}\n".format(user))
-        connection = psycopg2.connect(dbname=db_name, user=user, password=pw)
+        connection = psycopg2.connect(dbname=db_name, user=user, password=pw, host=host, port=port)
 
     cur = connection.cursor()
 
@@ -318,6 +318,12 @@ def init_parser(subparser, str2bool):
     u_help = 'database user name'
     parser.add_argument('-u', metavar='USER', type=str, help=u_help)
 
+    H_help = 'database host'
+    parser.add_argument('-H', metavar='HOST', type=str, help=H_help)
+
+    P_help = 'database port'
+    parser.add_argument('-P', metavar='PORT', type=int, help=P_help)
+
 
 def main(args):
     if args.D is not None:
@@ -325,7 +331,7 @@ def main(args):
             print('Error: please define a table (-t) and column (-c)')
             exit()
 
-        from_db(args.D, args.t, args.c, args.i, args.u)
+        from_db(args.D, args.t, args.c, args.i, args.u, args.H, args.P)
     elif args.d is not None:
         from_directory(args.d, args.o)
     else:
