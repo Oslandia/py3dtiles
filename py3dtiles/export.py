@@ -229,14 +229,14 @@ def wkbs2tileset(wkbs, ids, transform):
     arrays2tileset(positions, normals, bboxes, transform, ids)
 
 
-def from_db(db_name, table_name, column_name, id_column_name, user_name):
+def from_db(db_name, table_name, column_name, id_column_name, user_name, host_name):
     user = getpass.getuser() if user_name is None else user_name
 
     try:
         connection = psycopg2.connect(dbname=db_name, user=user)
     except psycopg2.OperationalError:
         pw = getpass.getpass("Postgres password for user {}\n".format(user))
-        connection = psycopg2.connect(dbname=db_name, user=user, password=pw)
+        connection = psycopg2.connect(host=host_name, dbname=db_name, user=user, password=pw)
 
     cur = connection.cursor()
 
@@ -307,13 +307,17 @@ def init_parser(subparser, str2bool):
     D_help = 'database name'
     group.add_argument('-D', metavar='DATABASE', type=str, help=D_help)
 
+    h_help = 'database host (default to localhost)'
+    parser.add_argument('-H', metavar='HOST', type=str, default='localhost', help=h_help)
+
     t_help = 'table name'
     parser.add_argument('-t', metavar='TABLE', type=str, help=t_help)
 
     c_help = 'geometry column name'
     parser.add_argument('-c', metavar='COLUMN', type=str, help=c_help)
 
-    parser.add_argument('-i', metavar='IDCOLUMN', type=str, help=c_help)
+    i_help = 'id column name'
+    parser.add_argument('-i', metavar='IDCOLUMN', type=str, help=i_help)
 
     u_help = 'database user name'
     parser.add_argument('-u', metavar='USER', type=str, help=u_help)
@@ -325,7 +329,7 @@ def main(args):
             print('Error: please define a table (-t) and column (-c)')
             exit()
 
-        from_db(args.D, args.t, args.c, args.i, args.u)
+        from_db(args.D, args.t, args.c, args.i, args.u, args.H)
     elif args.d is not None:
         from_directory(args.d, args.o)
     else:
