@@ -4,6 +4,8 @@ Command line usage
 info
 ~~~~
 
+The info sub-command outputs informations from a 3DTiles file in the .pnts or .b3dm format.
+
 Here is an example on how to retrieve basic information about a tile binary content, in this
 case *pointCloudRGB.pnts*:
 
