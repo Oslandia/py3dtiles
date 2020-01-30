@@ -45,7 +45,7 @@ merge
 
 The merge feature is a special use case: it generates a meta-tileset from a group of existing tilesets.
 
-It's useful to be able only a part of a pointcloud. For instance: if one has 6 input las file (A.las, B.las, ..., F.las), there are 2 solutions to vizualize them all in a 3dtiles viewer:
+It's useful to be able to convert only a part of a pointcloud. For instance: if one has 6 input las file (A.las, B.las, ..., F.las), there are 2 solutions to vizualize them all in a 3dtiles viewer:
   * run `py3dtiles convert A.las B.las ... F.las` and diplay the resulting tileset
   * or run `py3dtiles convert A.las`, then `py3dtiles convert B.las`, ... and then run `py3dtiles merge`
 
@@ -56,9 +56,10 @@ It's useful to be able only a part of a pointcloud. For instance: if one has 6 i
 export
 ~~~~~~
 
-Two export modes are available, the database export or the directory export.
-They both transform all the geometries provided in .b3dm files, along with a
-tileset.json file which organizes them.
+Two export modes are available, from a PostGIS database or from a directory.
+They both generate a 3dtiles tileset and b3dm geometries.
+
+At the moment, only multipolygons input geometries are supported.
 
 The directory export will use all the .wkb files in the provided directory.
 Warning: the coordinates are read as floats, not doubles. Make sure to offset
@@ -68,7 +69,7 @@ correctly placed. Usage example:
 
 .. code-block:: shell
 
-    $ export_tileset -d my_directory -o 10000 10000 0
+    $ py3dtiles export -d my_directory -o 10000 10000 0
 
 The database export requires a user name, a database name, the name of the table
 and its column that contains the geometry and (optionaly) the name of the column
@@ -76,4 +77,4 @@ that contains the object's ID. Usage example:
 
 .. code-block:: shell
 
-    $ export_tileset -D database -t my_city -c geom -i id -u oslandia
+    $ py3dtiles export -D database -t my_city -c geom -i id -u oslandia

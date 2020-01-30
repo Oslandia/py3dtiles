@@ -2,7 +2,7 @@
 
 ## How to generate the doc?
 
-First install dependencies in a python3 virtualenv:
+First install dependencies in a python3 virtualenv, in the root folder of this repository:
 
 ```
 pip install -e .
