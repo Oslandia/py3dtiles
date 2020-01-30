@@ -76,4 +76,4 @@ that contains the object's ID. Usage example:
 
 .. code-block:: shell
 
-    $ export_tileset -D database -t my_city -c geom -i id -u oslandia
+    $ py3dtiles export -t table -D database -c geometry_column 
