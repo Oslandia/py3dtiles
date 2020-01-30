@@ -35,6 +35,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="py3dtiles" href="api/modules.html" />
     <link rel="prev" title="Command line usage" href="cli.html" /> 
 </head>
 
@@ -57,6 +58,10 @@
 
           
             
+            
+              <div class="version">
+                master
+              </div>
             
           
 
@@ -89,6 +94,8 @@
 <li class="toctree-l2"><a class="reference internal" href="#batched-3d-model">Batched 3D Model</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="api/modules.html">API doc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ and Troubleshooting</a></li>
 </ul>
 
             
@@ -171,11 +178,11 @@
 <p>The py3dtiles module provides some classes to fit into the
 specification:</p>
 <ul class="simple">
-<li><p><em>Tile</em> with a header <em>TileHeader</em> and a body <em>TileBody</em></p></li>
+<li><p><em>TileContent</em> with a header <em>TileHeader</em> and a body <em>TileBody</em></p></li>
 <li><p><em>TileHeader</em> represents the metadata of the tile (magic value, version, …)</p></li>
 <li><p><em>TileBody</em> contains varying semantic and geometric data depending on the the tile’s type</p></li>
 </ul>
-<p>Moreover, a utility class <em>TileReader</em> is available to read a tile
+<p>Moreover, a utility class <em>TileContentReader</em> is available to read a tile
 file as well as a simple command line tool to retrieve basic information
 about a tile: <strong>py3dtiles_info</strong>. We also provide a utility to generate a
 tileset from a list of 3D models in WKB format or stored in a postGIS table.</p>
@@ -188,20 +195,20 @@ tileset from a list of 3D models in WKB format or stored in a postGIS table.</p>
 (<em>FeatureTableHeader</em> and a <em>FeatureTableBody</em>, which contains features of type
 <em>Feature</em>).</p>
 <p><strong>How to read a .pnts file</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileReader</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileContentReader</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">Pnts</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;tests/pointCloudRGB.pnts&#39;</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># read the file</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span> <span class="o">=</span> <span class="n">TileReader</span><span class="p">()</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile_content</span> <span class="o">=</span> <span class="n">TileContentReader</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 <span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># tile is an instance of the Tile class</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span>
-<span class="go">&lt;py3dtiles.tile.Tile&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># tile_content is an instance of the TileContent class</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile_content</span>
+<span class="go">&lt;py3dtiles.tile.TileContent&gt;</span>
 <span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract information about the tile header</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract information about the tile_content header</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">th</span> <span class="o">=</span> <span class="n">tile_content</span><span class="o">.</span><span class="n">header</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">th</span>
 <span class="go">&lt;py3dtiles.tile.TileHeader&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">th</span><span class="o">.</span><span class="n">magic_value</span>
@@ -210,7 +217,7 @@ tileset from a list of 3D models in WKB format or stored in a postGIS table.</p>
 <span class="go">15176</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract the feature table</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">ft</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ft</span> <span class="o">=</span> <span class="n">tile_content</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ft</span>
 <span class="go">&lt;py3dtiles.feature_table.FeatureTable</span>
 <span class="go">&gt;&gt;&gt;</span>
@@ -265,17 +272,17 @@ corresponding data type.</p>
 <p>Batched 3D Model Tile Format:
 <a class="reference external" href="https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/Batched3DModel">https://github.com/AnalyticalGraphicsInc/3d-tiles/tree/master/TileFormats/Batched3DModel</a></p>
 <p><strong>How to read a .b3dm file</strong></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileReader</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileContentReader</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">B3dm</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;tests/dragon_low.b3dm&#39;</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># read the file</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span> <span class="o">=</span> <span class="n">TileReader</span><span class="p">()</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile_content</span> <span class="o">=</span> <span class="n">TileContentReader</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
 <span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># tile is an instance of the Tile class</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tile</span>
-<span class="go">&lt;py3dtiles.tile.Tile&gt;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># tile_content is an instance of the TileContent class</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tile_content</span>
+<span class="go">&lt;py3dtiles.tile.TileContent&gt;</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract information about the tile header</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">th</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">header</span>
@@ -287,7 +294,7 @@ corresponding data type.</p>
 <span class="go">47246</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># extract the glTF</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span> <span class="o">=</span> <span class="n">tile</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">glTF</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span> <span class="o">=</span> <span class="n">tile_content</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">glTF</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span>
 <span class="go">&lt;py3dtiles.gltf.GlTF&gt;</span>
 <span class="go">&gt;&gt;&gt;</span>
@@ -327,7 +334,7 @@ file containing polyhedralsurfaces or multipolygons.</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">geometry</span> <span class="o">=</span> <span class="p">{</span> <span class="s1">&#39;position&#39;</span><span class="p">:</span> <span class="n">positions</span><span class="p">,</span> <span class="s1">&#39;normal&#39;</span><span class="p">:</span> <span class="n">normals</span><span class="p">,</span> <span class="s1">&#39;bbox&#39;</span><span class="p">:</span> <span class="n">box</span> <span class="p">}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">gltf</span> <span class="o">=</span> <span class="n">GlTF</span><span class="o">.</span><span class="n">from_binary_arrays</span><span class="p">([</span><span class="n">geometry</span><span class="p">],</span> <span class="n">transform</span><span class="p">)</span>
 <span class="go">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create a b3dm tile directly from the glTF.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># create a b3dm tile_content directly from the glTF.</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">B3dm</span><span class="o">.</span><span class="n">from_glTF</span><span class="p">(</span><span class="n">glTF</span><span class="p">)</span>
 <span class="go">&gt;&gt;&gt;</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="c1"># to save our tile as a .b3dm file</span>
@@ -344,6 +351,8 @@ file containing polyhedralsurfaces or multipolygons.</p>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="api/modules.html" class="btn btn-neutral float-right" title="py3dtiles" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="cli.html" class="btn btn-neutral float-left" title="Command line usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>

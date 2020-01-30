@@ -4,7 +4,7 @@ Command line usage
 info
 ~~~~
 
-Here is an example on how to retrieve basic information about a tile, in this
+Here is an example on how to retrieve basic information about a tile binary content, in this
 case *pointCloudRGB.pnts*:
 
 .. code-block:: shell

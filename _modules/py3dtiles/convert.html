@@ -1,0 +1,972 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>py3dtiles.convert &mdash; py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> py3dtiles
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                master
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command line usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API doc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ and Troubleshooting</a></li>
+</ul>
+
+            
+          
+        </div>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <p class="caption"><span class="caption-text">Links:</span></p>
+          <ul>
+            <li class="toctree-l1">
+              <a class="reference" href="https://github.com/oslandia/py3dtiles">
+                <span class="fa fa-lg fa-github" />
+                Github Repository
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">py3dtiles</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>py3dtiles.convert</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for py3dtiles.convert</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">zmq</span>
+<span class="kn">import</span> <span class="nn">pyproj</span>
+<span class="kn">import</span> <span class="nn">psutil</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">import</span> <span class="nn">concurrent.futures</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">py3dtiles.points.transformations</span> <span class="kn">import</span> <span class="n">rotation_matrix</span><span class="p">,</span> <span class="n">angle_between_vectors</span><span class="p">,</span> <span class="n">vector_product</span><span class="p">,</span> <span class="n">inverse_matrix</span><span class="p">,</span> <span class="n">scale_matrix</span><span class="p">,</span> <span class="n">translation_matrix</span>
+<span class="kn">from</span> <span class="nn">py3dtiles.points.utils</span> <span class="kn">import</span> <span class="n">compute_spacing</span><span class="p">,</span> <span class="n">name_to_filename</span>
+<span class="kn">from</span> <span class="nn">py3dtiles.points.node</span> <span class="kn">import</span> <span class="n">Node</span>
+<span class="kn">from</span> <span class="nn">py3dtiles</span> <span class="kn">import</span> <span class="n">TileContentReader</span>
+<span class="kn">from</span> <span class="nn">py3dtiles.points.shared_node_store</span> <span class="kn">import</span> <span class="n">SharedNodeStore</span>
+<span class="kn">import</span> <span class="nn">py3dtiles.points.task.las_reader</span> <span class="k">as</span> <span class="nn">las_reader</span>
+<span class="kn">import</span> <span class="nn">py3dtiles.points.task.xyz_reader</span> <span class="k">as</span> <span class="nn">xyz_reader</span>
+<span class="kn">import</span> <span class="nn">py3dtiles.points.task.node_process</span> <span class="k">as</span> <span class="nn">node_process</span>
+<span class="kn">import</span> <span class="nn">py3dtiles.points.task.pnts_writer</span> <span class="k">as</span> <span class="nn">pnts_writer</span>
+
+
+<span class="n">total_memory_MB</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psutil</span><span class="o">.</span><span class="n">virtual_memory</span><span class="p">()</span><span class="o">.</span><span class="n">total</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="SrsInMissingException"><a class="viewcode-back" href="../../api/py3dtiles.html#py3dtiles.convert.SrsInMissingException">[docs]</a><span class="k">class</span> <span class="nc">SrsInMissingException</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="k">pass</span></div>
+
+
+<span class="k">def</span> <span class="nf">write_tileset</span><span class="p">(</span><span class="n">in_folder</span><span class="p">,</span> <span class="n">out_folder</span><span class="p">,</span> <span class="n">octree_metadata</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">projection</span><span class="p">,</span> <span class="n">rotation_matrix</span><span class="p">,</span> <span class="n">include_rgb</span><span class="p">):</span>
+    <span class="c1"># compute tile transform matrix</span>
+    <span class="k">if</span> <span class="n">rotation_matrix</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="n">inverse_matrix</span><span class="p">(</span><span class="n">rotation_matrix</span><span class="p">)</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">transform</span><span class="p">,</span> <span class="n">scale_matrix</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">transform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">translation_matrix</span><span class="p">(</span><span class="n">offset</span><span class="p">),</span> <span class="n">transform</span><span class="p">)</span>
+
+    <span class="c1"># build fake points</span>
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">root_node</span> <span class="o">=</span> <span class="n">Node</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">,</span> <span class="n">octree_metadata</span><span class="o">.</span><span class="n">spacing</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">root_node</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">inv_aabb_size</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">,</span> <span class="s1">&#39;5&#39;</span><span class="p">,</span> <span class="s1">&#39;6&#39;</span><span class="p">,</span> <span class="s1">&#39;7&#39;</span><span class="p">]:</span>
+            <span class="n">ondisk_tile</span> <span class="o">=</span> <span class="n">name_to_filename</span><span class="p">(</span><span class="n">out_folder</span><span class="p">,</span> <span class="n">child</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">),</span> <span class="s1">&#39;.pnts&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">ondisk_tile</span><span class="p">):</span>
+                <span class="n">tile_content</span> <span class="o">=</span> <span class="n">TileContentReader</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">ondisk_tile</span><span class="p">)</span>
+                <span class="n">fth</span> <span class="o">=</span> <span class="n">tile_content</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span><span class="o">.</span><span class="n">header</span>
+                <span class="n">xyz</span> <span class="o">=</span> <span class="n">tile_content</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">positions_arr</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">fth</span><span class="o">.</span><span class="n">points_length</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">include_rgb</span><span class="p">:</span>
+                    <span class="n">rgb</span> <span class="o">=</span> <span class="n">tile_content</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">feature_table</span><span class="o">.</span><span class="n">body</span><span class="o">.</span><span class="n">colors_arr</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="n">fth</span><span class="o">.</span><span class="n">points_length</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">rgb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">xyz</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+                <span class="n">root_node</span><span class="o">.</span><span class="n">grid</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span>
+                    <span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                    <span class="n">inv_aabb_size</span><span class="p">,</span>
+                    <span class="n">xyz</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                    <span class="n">rgb</span><span class="p">)</span>
+
+        <span class="n">pnts_writer</span><span class="o">.</span><span class="n">node_to_pnts</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">),</span> <span class="n">root_node</span><span class="p">,</span> <span class="n">out_folder</span><span class="p">,</span> <span class="n">include_rgb</span><span class="p">)</span>
+
+    <span class="n">executor</span> <span class="o">=</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">ProcessPoolExecutor</span><span class="p">()</span>
+    <span class="n">root_tileset</span> <span class="o">=</span> <span class="n">Node</span><span class="o">.</span><span class="n">to_tileset</span><span class="p">(</span><span class="n">executor</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">),</span> <span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">,</span> <span class="n">octree_metadata</span><span class="o">.</span><span class="n">spacing</span><span class="p">,</span> <span class="n">out_folder</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="n">executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+
+    <span class="n">root_tileset</span><span class="p">[</span><span class="s1">&#39;transform&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">transform</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">root_tileset</span><span class="p">[</span><span class="s1">&#39;refine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;REPLACE&#39;</span>
+    <span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">root_tileset</span><span class="p">[</span><span class="s1">&#39;children&#39;</span><span class="p">]:</span>
+        <span class="n">child</span><span class="p">[</span><span class="s1">&#39;refine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;ADD&#39;</span>
+
+    <span class="n">tileset</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;asset&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;version&#39;</span><span class="p">:</span> <span class="s1">&#39;1.0&#39;</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s1">&#39;geometricError&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+            <span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">octree_metadata</span><span class="o">.</span><span class="n">aabb</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="n">scale</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="s1">&#39;root&#39;</span><span class="p">:</span> <span class="n">root_tileset</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">/tileset.json&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">out_folder</span><span class="p">),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tileset</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">make_rotation_matrix</span><span class="p">(</span><span class="n">z1</span><span class="p">,</span> <span class="n">z2</span><span class="p">):</span>
+    <span class="n">v0</span> <span class="o">=</span> <span class="n">z1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z1</span><span class="p">)</span>
+    <span class="n">v1</span> <span class="o">=</span> <span class="n">z2</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">z2</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">rotation_matrix</span><span class="p">(</span>
+        <span class="n">angle_between_vectors</span><span class="p">(</span><span class="n">v0</span><span class="p">,</span> <span class="n">v1</span><span class="p">),</span>
+        <span class="n">vector_product</span><span class="p">(</span><span class="n">v0</span><span class="p">,</span> <span class="n">v1</span><span class="p">))</span>
+
+
+<span class="n">OctreeMetadata</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;OctreeMetadata&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">,</span> <span class="s1">&#39;spacing&#39;</span><span class="p">,</span> <span class="s1">&#39;scale&#39;</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">zmq_process</span><span class="p">(</span><span class="n">activity_graph</span><span class="p">,</span> <span class="n">projection</span><span class="p">,</span> <span class="n">node_store</span><span class="p">,</span> <span class="n">octree_metadata</span><span class="p">,</span> <span class="n">folder</span><span class="p">,</span> <span class="n">write_rgb</span><span class="p">,</span> <span class="n">verbosity</span><span class="p">):</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+
+    <span class="c1"># Socket to receive messages on</span>
+    <span class="n">skt</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">DEALER</span><span class="p">)</span>
+    <span class="n">skt</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="s1">&#39;ipc:///tmp/py3dtiles1&#39;</span><span class="p">)</span>
+
+    <span class="n">startup_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="n">idle_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="n">activity_graph</span><span class="p">:</span>
+        <span class="n">activity</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;activity.</span><span class="si">{}</span><span class="s1">.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()),</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="c1"># notify we&#39;re ready</span>
+    <span class="n">skt</span><span class="o">.</span><span class="n">send_multipart</span><span class="p">([</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">])</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startup_time</span>
+
+        <span class="n">skt</span><span class="o">.</span><span class="n">poll</span><span class="p">()</span>
+
+        <span class="n">after</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startup_time</span>
+
+        <span class="n">idle_time</span> <span class="o">+=</span> <span class="n">after</span> <span class="o">-</span> <span class="n">before</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">skt</span><span class="o">.</span><span class="n">recv_multipart</span><span class="p">()</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">delta</span> <span class="o">&gt;</span> <span class="mf">0.01</span> <span class="ow">and</span> <span class="n">verbosity</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1"> : Delta time: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span> <span class="nb">round</span><span class="p">(</span><span class="n">after</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="mi">3</span><span class="p">)))</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="n">command</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">command_type</span> <span class="o">=</span> <span class="mi">1</span>
+
+            <span class="k">if</span> <span class="n">command</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;shutdown&#39;</span><span class="p">:</span>
+                <span class="c1"># ack</span>
+                <span class="k">break</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">command</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">])</span>
+            <span class="n">init_reader_fn</span> <span class="o">=</span> <span class="n">las_reader</span><span class="o">.</span><span class="n">run</span> <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.las&#39;</span> <span class="k">else</span> <span class="n">xyz_reader</span><span class="o">.</span><span class="n">run</span>
+            <span class="n">init_reader_fn</span><span class="p">(</span>
+                <span class="n">command</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                <span class="n">command</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">],</span>
+                <span class="n">command</span><span class="p">[</span><span class="s1">&#39;offset_scale&#39;</span><span class="p">],</span>
+                <span class="n">command</span><span class="p">[</span><span class="s1">&#39;portion&#39;</span><span class="p">],</span>
+                <span class="n">skt</span><span class="p">,</span>
+                <span class="n">projection</span><span class="p">,</span>
+                <span class="n">verbosity</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">command</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;pnts&#39;</span><span class="p">:</span>
+            <span class="n">command_type</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">pnts_writer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">skt</span><span class="p">,</span> <span class="n">command</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">command</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">folder</span><span class="p">,</span> <span class="n">write_rgb</span><span class="p">)</span>
+            <span class="n">skt</span><span class="o">.</span><span class="n">send_multipart</span><span class="p">([</span><span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">command_type</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">node_process</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                <span class="n">command</span><span class="p">,</span>
+                <span class="n">octree_metadata</span><span class="p">,</span>
+                <span class="n">skt</span><span class="p">,</span>
+                <span class="n">verbosity</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">activity_graph</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{before}</span><span class="s1">, </span><span class="si">{command_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="nb">locals</span><span class="p">()),</span> <span class="n">file</span><span class="o">=</span><span class="n">activity</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{before}</span><span class="s1">, 0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="nb">locals</span><span class="p">()),</span> <span class="n">file</span><span class="o">=</span><span class="n">activity</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{after}</span><span class="s1">, 0&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="nb">locals</span><span class="p">()),</span> <span class="n">file</span><span class="o">=</span><span class="n">activity</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{after}</span><span class="s1">, </span><span class="si">{command_type}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="nb">locals</span><span class="p">()),</span> <span class="n">file</span><span class="o">=</span><span class="n">activity</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">activity_graph</span><span class="p">:</span>
+        <span class="n">activity</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="n">verbosity</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;total: </span><span class="si">{}</span><span class="s1"> sec, idle: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startup_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="nb">round</span><span class="p">(</span><span class="n">idle_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+    <span class="n">skt</span><span class="o">.</span><span class="n">send_multipart</span><span class="p">([</span><span class="sa">b</span><span class="s1">&#39;halted&#39;</span><span class="p">])</span>
+
+
+<span class="k">def</span> <span class="nf">zmq_send_to_process</span><span class="p">(</span><span class="n">idle_clients</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">idle_clients</span>
+    <span class="n">socket</span><span class="o">.</span><span class="n">send_multipart</span><span class="p">([</span><span class="n">idle_clients</span><span class="o">.</span><span class="n">pop</span><span class="p">(),</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())]</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">zmq_send_to_all_process</span><span class="p">(</span><span class="n">idle_clients</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">idle_clients</span>
+    <span class="k">for</span> <span class="n">client</span> <span class="ow">in</span> <span class="n">idle_clients</span><span class="p">:</span>
+        <span class="n">socket</span><span class="o">.</span><span class="n">send_multipart</span><span class="p">([</span><span class="n">client</span><span class="p">,</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())]</span> <span class="o">+</span> <span class="n">message</span><span class="p">)</span>
+    <span class="n">idle_clients</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">is_ancestor</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">la</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">ancestor</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">la</span> <span class="o">&lt;=</span> <span class="n">ln</span> <span class="ow">and</span> <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">la</span><span class="p">]</span> <span class="o">==</span> <span class="n">ancestor</span>
+
+
+<span class="k">def</span> <span class="nf">is_ancestor_in_list</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">ancestor</span> <span class="ow">in</span> <span class="n">d</span><span class="p">:</span>
+        <span class="n">k_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ancestor</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">k_len</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">is_ancestor</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">k_len</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">ancestor</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span>
+
+
+<span class="k">def</span> <span class="nf">can_pnts_be_written</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">finished_node</span><span class="p">,</span> <span class="n">input_nodes</span><span class="p">,</span> <span class="n">active_nodes</span><span class="p">):</span>
+    <span class="n">ln</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">is_ancestor</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">finished_node</span><span class="p">),</span> <span class="n">name</span><span class="p">,</span> <span class="n">finished_node</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_ancestor_in_list</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">active_nodes</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_ancestor_in_list</span><span class="p">(</span><span class="n">ln</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">input_nodes</span><span class="p">))</span>
+
+
+<span class="n">Reader</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;Reader&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">])</span>
+<span class="n">NodeProcess</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;NodeProcess&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">,</span> <span class="s1">&#39;inactive&#39;</span><span class="p">])</span>
+<span class="n">ToPnts</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s1">&#39;ToPnts&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;input&#39;</span><span class="p">,</span> <span class="s1">&#39;active&#39;</span><span class="p">])</span>
+
+
+<span class="k">class</span> <span class="nc">State</span><span class="p">():</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pointcloud_file_portions</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">Reader</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="n">pointcloud_file_portions</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">node_process</span> <span class="o">=</span> <span class="n">NodeProcess</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="p">{},</span> <span class="n">active</span><span class="o">=</span><span class="p">{},</span> <span class="n">inactive</span><span class="o">=</span><span class="p">[])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">to_pnts</span> <span class="o">=</span> <span class="n">ToPnts</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="p">[],</span> <span class="n">active</span><span class="o">=</span><span class="p">[])</span>
+
+    <span class="k">def</span> <span class="nf">print_debug</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:^16}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;Step&#39;</span><span class="p">,</span> <span class="s1">&#39;Input&#39;</span><span class="p">,</span> <span class="s1">&#39;Active&#39;</span><span class="p">,</span> <span class="s1">&#39;Inactive&#39;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:^16}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;LAS reader&#39;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">active</span><span class="p">),</span>
+            <span class="s1">&#39;&#39;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:^16}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;Node process&#39;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="p">)))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:^16}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="s1">&#39;Pnts writer&#39;</span><span class="p">,</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">input</span><span class="p">),</span>
+            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">active</span><span class="p">),</span>
+            <span class="s1">&#39;&#39;</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">can_queue_more_jobs</span><span class="p">(</span><span class="n">idles</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">idles</span>
+
+
+<span class="k">def</span> <span class="nf">init_parser</span><span class="p">(</span><span class="n">subparser</span><span class="p">,</span> <span class="n">str2bool</span><span class="p">):</span>
+
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">subparser</span><span class="o">.</span><span class="n">add_parser</span><span class="p">(</span>
+        <span class="s1">&#39;convert&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Convert .las files to a 3dtiles tileset.&#39;</span><span class="p">,</span>
+        <span class="n">formatter_class</span><span class="o">=</span><span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentDefaultsHelpFormatter</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;files&#39;</span><span class="p">,</span>
+        <span class="n">nargs</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Filenames to process. The file must use the .las or .xyz format.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--out&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The folder where the resulting tileset will be written.&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./3dtiles&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--overwrite&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Overwrite the ouput folder if it already exists.&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="n">str2bool</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--jobs&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;The number of parallel jobs to start. Default to the number of cpu.&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--cache_size&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Cache size in MB. Default to available memory / 10.&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_memory_MB</span> <span class="o">/</span> <span class="mi">10</span><span class="p">),</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--srs_out&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;SRS to convert the output with (numeric part of the EPSG code)&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--srs_in&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Override input SRS (numeric part of the EPSG code)&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--fraction&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Percentage of the pointcloud to process.&#39;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--benchmark&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Print summary at the end of the process&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--rgb&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Export rgb attributes&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">str2bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--graph&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Produce debug graphes (requires pygal)&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">str2bool</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s1">&#39;--color_scale&#39;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Force color scale&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">main</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">convert</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">files</span><span class="p">,</span>
+                       <span class="n">outfolder</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">out</span><span class="p">,</span>
+                       <span class="n">overwrite</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">overwrite</span><span class="p">,</span>
+                       <span class="n">jobs</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">jobs</span><span class="p">,</span>
+                       <span class="n">cache_size</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">cache_size</span><span class="p">,</span>
+                       <span class="n">srs_out</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">srs_out</span><span class="p">,</span>
+                       <span class="n">srs_in</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">srs_in</span><span class="p">,</span>
+                       <span class="n">fraction</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">fraction</span><span class="p">,</span>
+                       <span class="n">benchmark</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">benchmark</span><span class="p">,</span>
+                       <span class="n">rgb</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">rgb</span><span class="p">,</span>
+                       <span class="n">graph</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span>
+                       <span class="n">color_scale</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">color_scale</span><span class="p">,</span>
+                       <span class="n">verbose</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">SrsInMissingException</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No SRS information in input files, you should specify it with --srs_in&#39;</span><span class="p">)</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="convert"><a class="viewcode-back" href="../../api/py3dtiles.html#py3dtiles.convert.convert">[docs]</a><span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="n">files</span><span class="p">,</span>
+            <span class="n">outfolder</span><span class="o">=</span><span class="s1">&#39;./3dtiles&#39;</span><span class="p">,</span>
+            <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">jobs</span><span class="o">=</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">(),</span>
+            <span class="n">cache_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_memory_MB</span> <span class="o">/</span> <span class="mi">10</span><span class="p">),</span>
+            <span class="n">srs_out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">srs_in</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">fraction</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+            <span class="n">benchmark</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">rgb</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">graph</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">color_scale</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;convert</span>
+
+<span class="sd">    Convert pointclouds (xyz or las) to 3dtiles tileset containing pnts node</span>
+
+<span class="sd">    :param files: Filenames to process. The file must use the .las or .xyz format.</span>
+<span class="sd">    :type files: list of str, or str</span>
+<span class="sd">    :param outfolder: The folder where the resulting tileset will be written.</span>
+<span class="sd">    :type outfolder: path-like object</span>
+<span class="sd">    :param overwrite: Overwrite the ouput folder if it already exists.</span>
+<span class="sd">    :type overwrite: bool</span>
+<span class="sd">    :param jobs: The number of parallel jobs to start. Default to the number of cpu.</span>
+<span class="sd">    :type jobs: int</span>
+<span class="sd">    :param cache_size: Cache size in MB. Default to available memory / 10.</span>
+<span class="sd">    :type cache_size: int</span>
+<span class="sd">    :param srs_out: SRS to convert the output with (numeric part of the EPSG code)</span>
+<span class="sd">    :type srs_out: int or str</span>
+<span class="sd">    :param srs_in: Override input SRS (numeric part of the EPSG code)</span>
+<span class="sd">    :type srs_in: int or str</span>
+<span class="sd">    :param fraction: Percentage of the pointcloud to process, between 0 and 100.</span>
+<span class="sd">    :type fraction: int</span>
+<span class="sd">    :param benchmark: Print summary at the end of the process</span>
+<span class="sd">    :type benchmark: str</span>
+<span class="sd">    :param rgb: Export rgb attributes.</span>
+<span class="sd">    :type rgb: bool</span>
+<span class="sd">    :param graph: Produce debug graphes (requires pygal).</span>
+<span class="sd">    :type graph: bool</span>
+<span class="sd">    :param color_scale: Force color scale</span>
+<span class="sd">    :type color_scale: float</span>
+
+<span class="sd">    :raises SrsInMissingException: if py3dtiles couldn&#39;t find srs informations in input files and srs_in is not specified</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># allow str directly if only one input</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">files</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">files</span>
+
+    <span class="c1"># read all input files headers and determine the aabb/spacing</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">init_reader_fn</span> <span class="o">=</span> <span class="n">las_reader</span><span class="o">.</span><span class="n">init</span> <span class="k">if</span> <span class="n">ext</span> <span class="o">==</span> <span class="s1">&#39;.las&#39;</span> <span class="k">else</span> <span class="n">xyz_reader</span><span class="o">.</span><span class="n">init</span>
+    <span class="n">infos</span> <span class="o">=</span> <span class="n">init_reader_fn</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="n">color_scale</span><span class="o">=</span><span class="n">color_scale</span><span class="p">,</span> <span class="n">srs_in</span><span class="o">=</span><span class="n">srs_in</span><span class="p">)</span>
+
+    <span class="n">avg_min</span> <span class="o">=</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;avg_min&#39;</span><span class="p">]</span>
+    <span class="n">rotation_matrix</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># srs stuff</span>
+    <span class="n">projection</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">srs_out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">p2</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="s1">&#39;epsg:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">srs_out</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">srs_in</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">pyproj</span><span class="o">.</span><span class="n">Proj</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="s1">&#39;epsg:</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">srs_in</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">p1</span> <span class="o">=</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;srs_in&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">srs_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">SrsInMissingException</span><span class="p">(</span><span class="s1">&#39;No SRS informations in the provided files&#39;</span><span class="p">)</span>
+        <span class="n">projection</span> <span class="o">=</span> <span class="p">[</span><span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">]</span>
+
+        <span class="n">bl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">projection</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">projection</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">])))</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">projection</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">projection</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">2</span><span class="p">])))</span>
+        <span class="n">br</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">projection</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">projection</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">])))</span>
+
+        <span class="n">avg_min</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pyproj</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span>
+            <span class="n">projection</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">projection</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">avg_min</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">avg_min</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">avg_min</span><span class="p">[</span><span class="mi">2</span><span class="p">])))</span>
+
+        <span class="n">x_axis</span> <span class="o">=</span> <span class="n">br</span> <span class="o">-</span> <span class="n">bl</span>
+
+        <span class="n">bl</span> <span class="o">=</span> <span class="n">bl</span> <span class="o">-</span> <span class="n">avg_min</span>
+        <span class="n">tr</span> <span class="o">=</span> <span class="n">tr</span> <span class="o">-</span> <span class="n">avg_min</span>
+
+        <span class="k">if</span> <span class="n">srs_out</span> <span class="o">==</span> <span class="s1">&#39;4978&#39;</span><span class="p">:</span>
+            <span class="c1"># Transform geocentric normal =&gt; (0, 0, 1)</span>
+            <span class="c1"># and 4978-bbox x axis =&gt; (1, 0, 0),</span>
+            <span class="c1"># to have a bbox in local coordinates that&#39;s nicely aligned with the data</span>
+            <span class="n">rotation_matrix</span> <span class="o">=</span> <span class="n">make_rotation_matrix</span><span class="p">(</span><span class="n">avg_min</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+            <span class="n">rotation_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span>
+                <span class="n">make_rotation_matrix</span><span class="p">(</span><span class="n">x_axis</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])),</span>
+                <span class="n">rotation_matrix</span><span class="p">)</span>
+
+            <span class="n">bl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">bl</span><span class="p">,</span> <span class="n">rotation_matrix</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+            <span class="n">tr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">rotation_matrix</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="n">root_aabb</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">bl</span><span class="p">,</span> <span class="n">tr</span><span class="p">),</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">bl</span><span class="p">,</span> <span class="n">tr</span><span class="p">)</span>
+        <span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># offset</span>
+        <span class="n">root_aabb</span> <span class="o">=</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;aabb&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">avg_min</span>
+
+    <span class="n">original_aabb</span> <span class="o">=</span> <span class="n">root_aabb</span>
+
+    <span class="k">if</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">base_spacing</span> <span class="o">=</span> <span class="n">compute_spacing</span><span class="p">(</span><span class="n">root_aabb</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">base_spacing</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="n">root_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">])</span>
+        <span class="k">elif</span> <span class="n">base_spacing</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">root_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">root_scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">root_aabb</span> <span class="o">=</span> <span class="n">root_aabb</span> <span class="o">*</span> <span class="n">root_scale</span>
+    <span class="n">root_spacing</span> <span class="o">=</span> <span class="n">compute_spacing</span><span class="p">(</span><span class="n">root_aabb</span><span class="p">)</span>
+
+    <span class="n">octree_metadata</span> <span class="o">=</span> <span class="n">OctreeMetadata</span><span class="p">(</span><span class="n">aabb</span><span class="o">=</span><span class="n">root_aabb</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="n">root_spacing</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">root_scale</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="c1"># create folder</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">outfolder</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">overwrite</span><span class="p">:</span>
+            <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">outfolder</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Error, folder </span><span class="se">\&#39;</span><span class="si">{}</span><span class="se">\&#39;</span><span class="s1"> already exists&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">outfolder</span><span class="p">))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">outfolder</span><span class="p">)</span>
+    <span class="n">working_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">outfolder</span><span class="p">,</span> <span class="s1">&#39;tmp&#39;</span><span class="p">)</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">working_dir</span><span class="p">)</span>
+
+    <span class="n">node_store</span> <span class="o">=</span> <span class="n">SharedNodeStore</span><span class="p">(</span><span class="n">working_dir</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Summary:&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - points to process: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">infos</span><span class="p">[</span><span class="s1">&#39;point_count&#39;</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - offset to use: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">avg_min</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - root spacing: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root_spacing</span> <span class="o">/</span> <span class="n">root_scale</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - root aabb: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root_aabb</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - original aabb: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">original_aabb</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - scale: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">root_scale</span><span class="p">))</span>
+
+    <span class="n">startup</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+    <span class="n">initial_portion_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">infos</span><span class="p">[</span><span class="s1">&#39;portions&#39;</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="n">graph</span><span class="p">:</span>
+        <span class="n">progression_log</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;progression.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">add_tasks_to_process</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">point_count</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="n">point_count</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="n">tasks_to_process</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tasks_to_process</span><span class="p">:</span>
+            <span class="n">tasks_to_process</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">([</span><span class="n">task</span><span class="p">],</span> <span class="n">point_count</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">tasks</span><span class="p">,</span> <span class="n">count</span> <span class="o">=</span> <span class="n">tasks_to_process</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+            <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="n">tasks_to_process</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">count</span> <span class="o">+</span> <span class="n">point_count</span><span class="p">)</span>
+
+    <span class="n">processed_points</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">points_in_progress</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">previous_percent</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">points_in_pnts</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">max_splitting_jobs_count</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">jobs</span> <span class="o">//</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c1"># zmq setup</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">zmq</span><span class="o">.</span><span class="n">Context</span><span class="p">()</span>
+
+    <span class="n">zmq_skt</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">socket</span><span class="p">(</span><span class="n">zmq</span><span class="o">.</span><span class="n">ROUTER</span><span class="p">)</span>
+    <span class="n">zmq_skt</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s1">&#39;ipc:///tmp/py3dtiles1&#39;</span><span class="p">)</span>
+
+    <span class="n">zmq_idle_clients</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">state</span> <span class="o">=</span> <span class="n">State</span><span class="p">(</span><span class="n">infos</span><span class="p">[</span><span class="s1">&#39;portions&#39;</span><span class="p">])</span>
+
+    <span class="n">zmq_processes_killed</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="n">zmq_processes</span> <span class="o">=</span> <span class="p">[</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span>
+        <span class="n">target</span><span class="o">=</span><span class="n">zmq_process</span><span class="p">,</span>
+        <span class="n">args</span><span class="o">=</span><span class="p">(</span>
+            <span class="n">graph</span><span class="p">,</span> <span class="n">projection</span><span class="p">,</span> <span class="n">node_store</span><span class="p">,</span> <span class="n">octree_metadata</span><span class="p">,</span> <span class="n">outfolder</span><span class="p">,</span> <span class="n">rgb</span><span class="p">,</span> <span class="n">verbose</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">jobs</span><span class="p">)]</span>
+
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">zmq_processes</span><span class="p">:</span>
+        <span class="n">p</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+    <span class="n">activities</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">pid</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">zmq_processes</span><span class="p">]</span>
+
+    <span class="n">time_waiting_an_idle_process</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="c1"># state.print_debug()</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startup</span>
+        <span class="n">at_least_one_job_ended</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="n">all_processes_busy</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">can_queue_more_jobs</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">)</span>
+        <span class="k">while</span> <span class="n">all_processes_busy</span> <span class="ow">or</span> <span class="n">zmq_skt</span><span class="o">.</span><span class="n">poll</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">zmq</span><span class="o">.</span><span class="n">POLLIN</span><span class="p">):</span>
+            <span class="c1"># Blocking read but it&#39;s fine because either all our child processes are busy</span>
+            <span class="c1"># or we know that there&#39;s something to read (zmq.POLLIN)</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">zmq_skt</span><span class="o">.</span><span class="n">recv_multipart</span><span class="p">()</span>
+
+            <span class="n">client_id</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">client_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">zmq_idle_clients</span>
+                    <span class="n">zmq_idle_clients</span> <span class="o">+=</span> <span class="p">[</span><span class="n">client_id</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="n">all_processes_busy</span><span class="p">:</span>
+                        <span class="n">time_waiting_an_idle_process</span> <span class="o">+=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span>
+                    <span class="n">all_processes_busy</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">elif</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;halted&#39;</span><span class="p">:</span>
+                    <span class="n">zmq_processes_killed</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">all_processes_busy</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                    <span class="n">processed_points</span> <span class="o">+=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span>
+                    <span class="n">points_in_progress</span> <span class="o">-=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;total&#39;</span><span class="p">]</span>
+
+                    <span class="k">if</span> <span class="s1">&#39;save&#39;</span> <span class="ow">in</span> <span class="n">result</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;save&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">node_store</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;save&#39;</span><span class="p">])</span>
+
+                    <span class="k">if</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;root&#39;</span><span class="p">:</span>
+                        <span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">active</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">del</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]]</span>
+
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span>
+
+                            <span class="k">if</span> <span class="ow">not</span> <span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span> <span class="ow">or</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="p">:</span>
+                                    <span class="n">finished_node</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+                                    <span class="k">if</span> <span class="ow">not</span> <span class="n">can_pnts_be_written</span><span class="p">(</span>
+                                            <span class="n">finished_node</span><span class="p">,</span>
+                                            <span class="n">finished_node</span><span class="p">,</span>
+                                            <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+                                            <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">):</span>
+                                        <span class="k">pass</span>
+                                    <span class="k">else</span><span class="p">:</span>
+                                        <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                                        <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">finished_node</span><span class="p">)</span>
+
+                                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                                            <span class="n">candidate</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+                                            <span class="k">if</span> <span class="n">can_pnts_be_written</span><span class="p">(</span>
+                                                    <span class="n">candidate</span><span class="p">,</span> <span class="n">finished_node</span><span class="p">,</span>
+                                                    <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+                                                    <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">):</span>
+                                                <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+                                                <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
+
+                                <span class="k">else</span><span class="p">:</span>
+                                    <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="p">:</span>
+                                        <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
+                                    <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+
+                    <span class="n">at_least_one_job_ended</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">elif</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="sa">b</span><span class="s1">&#39;pnts&#39;</span><span class="p">:</span>
+                <span class="n">points_in_pnts</span> <span class="o">+=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">active</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">add_tasks_to_process</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">count</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">input</span> <span class="ow">and</span> <span class="n">can_queue_more_jobs</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">):</span>
+            <span class="n">node_name</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">datas</span> <span class="o">=</span> <span class="n">node_store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">datas</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> has no data??&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+            <span class="n">zmq_send_to_process</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">,</span> <span class="n">zmq_skt</span><span class="p">,</span> <span class="p">[</span><span class="sa">b</span><span class="s1">&#39;pnts&#39;</span><span class="p">,</span> <span class="n">node_name</span><span class="p">,</span> <span class="n">datas</span><span class="p">])</span>
+            <span class="n">node_store</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+            <span class="n">state</span><span class="o">.</span><span class="n">to_pnts</span><span class="o">.</span><span class="n">active</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">can_queue_more_jobs</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">):</span>
+            <span class="n">potential</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+                <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">],</span>
+                <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+            <span class="k">while</span> <span class="n">can_queue_more_jobs</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">)</span> <span class="ow">and</span> <span class="n">potential</span><span class="p">:</span>
+                <span class="n">target_count</span> <span class="o">=</span> <span class="mi">100000</span>
+                <span class="n">job_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">potential</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">while</span> <span class="n">count</span> <span class="o">&lt;</span> <span class="n">target_count</span> <span class="ow">and</span> <span class="n">potential</span> <span class="ow">and</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">point_count</span><span class="p">)</span> <span class="o">=</span> <span class="n">potential</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                        <span class="n">count</span> <span class="o">+=</span> <span class="n">point_count</span>
+                        <span class="n">job_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                        <span class="n">job_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">node_store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span>
+                        <span class="n">job_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s1">&#39;&gt;I&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">))]</span>
+                        <span class="n">job_list</span> <span class="o">+=</span> <span class="n">tasks</span>
+                        <span class="k">del</span> <span class="n">potential</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+                        <span class="k">del</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+                        <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">),</span> <span class="n">point_count</span><span class="p">,</span> <span class="n">now</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="p">:</span>
+                            <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">inactive</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">name</span><span class="p">))</span>
+                    <span class="n">idx</span> <span class="o">-=</span> <span class="mi">1</span>
+
+                <span class="k">if</span> <span class="n">job_list</span><span class="p">:</span>
+                    <span class="n">zmq_send_to_process</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">,</span> <span class="n">zmq_skt</span><span class="p">,</span> <span class="n">job_list</span><span class="p">)</span>
+
+        <span class="k">while</span> <span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span>
+               <span class="ow">and</span> <span class="p">(</span><span class="n">points_in_progress</span> <span class="o">&lt;</span> <span class="mi">60000000</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">active</span><span class="p">)</span>
+               <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">active</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">max_splitting_jobs_count</span>
+               <span class="ow">and</span> <span class="n">can_queue_more_jobs</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Submit next portion </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">_id</span> <span class="o">=</span> <span class="s1">&#39;root_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">)</span>
+            <span class="n">file</span><span class="p">,</span> <span class="n">portion</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
+            <span class="n">points_in_progress</span> <span class="o">+=</span> <span class="n">portion</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">portion</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="n">zmq_send_to_process</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">,</span> <span class="n">zmq_skt</span><span class="p">,</span> <span class="p">[</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span>
+                <span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="n">file</span><span class="p">,</span>
+                <span class="s1">&#39;offset_scale&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="n">avg_min</span><span class="p">,</span> <span class="n">root_scale</span><span class="p">,</span> <span class="n">rotation_matrix</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="k">if</span> <span class="n">rotation_matrix</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;color_scale&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;portion&#39;</span><span class="p">:</span> <span class="n">portion</span><span class="p">,</span>
+                <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">_id</span>
+            <span class="p">})])</span>
+
+            <span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">active</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_id</span><span class="p">)</span>
+
+        <span class="c1"># if at this point we have no work in progress =&gt; we&#39;re done</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">)</span> <span class="o">==</span> <span class="n">jobs</span> <span class="ow">or</span> <span class="n">zmq_processes_killed</span> <span class="o">==</span> <span class="n">jobs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">zmq_processes_killed</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">zmq_send_to_all_process</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">,</span> <span class="n">zmq_skt</span><span class="p">,</span> <span class="p">[</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;shutdown&#39;</span><span class="p">)])</span>
+                <span class="n">zmq_processes_killed</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">points_in_pnts</span> <span class="o">==</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;point_count&#39;</span><span class="p">],</span> <span class="s1">&#39;!!! Invalid point count in the written .pnts (expected: </span><span class="si">{}</span><span class="s1">, was: </span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;point_count&#39;</span><span class="p">],</span> <span class="n">points_in_pnts</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Writing 3dtiles </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">infos</span><span class="p">[</span><span class="s1">&#39;avg_min&#39;</span><span class="p">]))</span>
+                <span class="n">write_tileset</span><span class="p">(</span><span class="n">working_dir</span><span class="p">,</span>
+                              <span class="n">outfolder</span><span class="p">,</span>
+                              <span class="n">octree_metadata</span><span class="p">,</span>
+                              <span class="n">avg_min</span><span class="p">,</span>
+                              <span class="n">root_scale</span><span class="p">,</span>
+                              <span class="n">projection</span><span class="p">,</span>
+                              <span class="n">rotation_matrix</span><span class="p">,</span>
+                              <span class="n">rgb</span><span class="p">)</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">working_dir</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Done&#39;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">benchmark</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">,</span><span class="si">{}</span><span class="s1">,</span><span class="si">{}</span><span class="s1">,</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="n">benchmark</span><span class="p">,</span>
+                        <span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">]),</span>
+                        <span class="n">points_in_pnts</span><span class="p">,</span>
+                        <span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startup</span><span class="p">,</span> <span class="mi">1</span><span class="p">)))</span>
+
+                <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">zmq_processes</span><span class="p">:</span>
+                    <span class="n">p</span><span class="o">.</span><span class="n">terminate</span><span class="p">()</span>
+                <span class="k">break</span>
+
+        <span class="k">if</span> <span class="n">at_least_one_job_ended</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:^16}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;Name&#39;</span><span class="p">,</span> <span class="s1">&#39;Points&#39;</span><span class="p">,</span> <span class="s1">&#39;Seconds&#39;</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:^16}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">|</span><span class="si">{:^8}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                        <span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> (</span><span class="si">{}</span><span class="s1">)&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;ascii&#39;</span><span class="p">),</span> <span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                        <span class="n">v</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                        <span class="nb">round</span><span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">v</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">)))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pending:&#39;</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - root: </span><span class="si">{}</span><span class="s1"> / </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">input</span><span class="p">),</span>
+                    <span class="n">initial_portion_count</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;  - other: </span><span class="si">{}</span><span class="s1"> files for </span><span class="si">{}</span><span class="s1"> nodes&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">sum</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">values</span><span class="p">()]),</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">input</span><span class="p">)))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">state</span><span class="o">.</span><span class="n">print_debug</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1"> % points in </span><span class="si">{}</span><span class="s1"> sec [</span><span class="si">{}</span><span class="s1"> tasks, </span><span class="si">{}</span><span class="s1"> nodes, </span><span class="si">{}</span><span class="s1"> wip]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">processed_points</span> <span class="o">/</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;point_count&#39;</span><span class="p">],</span> <span class="mi">2</span><span class="p">),</span>
+                    <span class="nb">round</span><span class="p">(</span><span class="n">now</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                    <span class="n">jobs</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">zmq_idle_clients</span><span class="p">),</span>
+                    <span class="nb">len</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">node_process</span><span class="o">.</span><span class="n">active</span><span class="p">),</span>
+                    <span class="n">points_in_progress</span><span class="p">))</span>
+            <span class="k">elif</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">percent</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">processed_points</span> <span class="o">/</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;point_count&#39;</span><span class="p">],</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="n">time_left</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">percent</span><span class="p">)</span> <span class="o">*</span> <span class="n">now</span> <span class="o">/</span> <span class="p">(</span><span class="n">percent</span> <span class="o">+</span> <span class="mf">0.001</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="si">{:&gt;6}</span><span class="s1"> </span><span class="si">% i</span><span class="s1">n </span><span class="si">{}</span><span class="s1"> sec [est. time left: </span><span class="si">{}</span><span class="s1"> sec]&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">percent</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">now</span><span class="p">),</span> <span class="nb">round</span><span class="p">(</span><span class="n">time_left</span><span class="p">)),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="kc">False</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">percent</span><span class="p">)</span> <span class="o">!=</span> <span class="n">previous_percent</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+                    <span class="n">previous_percent</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">percent</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">graph</span><span class="p">:</span>
+                <span class="n">percent</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">processed_points</span> <span class="o">/</span> <span class="n">infos</span><span class="p">[</span><span class="s1">&#39;point_count&#39;</span><span class="p">],</span> <span class="mi">3</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{}</span><span class="s1">, </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">startup</span><span class="p">,</span> <span class="n">percent</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">progression_log</span><span class="p">)</span>
+
+        <span class="n">node_store</span><span class="o">.</span><span class="n">control_memory_usage</span><span class="p">(</span><span class="n">cache_size</span><span class="p">,</span> <span class="n">verbose</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">verbose</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;destroy&#39;</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">time_waiting_an_idle_process</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">graph</span><span class="p">:</span>
+        <span class="n">progression_log</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="c1"># pygal chart</span>
+    <span class="k">if</span> <span class="n">graph</span><span class="p">:</span>
+        <span class="kn">import</span> <span class="nn">pygal</span>
+
+        <span class="n">dateline</span> <span class="o">=</span> <span class="n">pygal</span><span class="o">.</span><span class="n">XY</span><span class="p">(</span><span class="n">x_label_rotation</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">secondary_range</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>  <span class="c1"># , show_y_guides=False)</span>
+        <span class="k">for</span> <span class="n">pid</span> <span class="ow">in</span> <span class="n">activities</span><span class="p">:</span>
+            <span class="n">activity</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;activity.</span><span class="si">{}</span><span class="s1">.csv&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">activities</span><span class="p">)</span> <span class="o">-</span> <span class="n">activities</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+            <span class="c1"># activities.index(pid) =</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">content</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                        <span class="n">ts</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                        <span class="n">value</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">3.0</span>
+                        <span class="n">activity</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ts</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">value</span> <span class="o">*</span> <span class="mf">0.9</span><span class="p">))</span>
+
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">activity</span><span class="p">:</span>
+                <span class="n">activity</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">activity</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">activity</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]))</span>
+                <span class="n">activity</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">activity</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">dateline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">pid</span><span class="p">),</span> <span class="n">activity</span><span class="p">,</span> <span class="n">show_dots</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;progression.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">values</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                    <span class="n">values</span> <span class="o">+=</span> <span class="p">[(</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="mi">1</span><span class="p">]))]</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s1">&#39;progression.csv&#39;</span><span class="p">)</span>
+        <span class="n">dateline</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s1">&#39;progression&#39;</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">show_dots</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">secondary</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">stroke_style</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">})</span>
+
+        <span class="n">dateline</span><span class="o">.</span><span class="n">render_to_file</span><span class="p">(</span><span class="s1">&#39;activity.svg&#39;</span><span class="p">)</span>
+
+    <span class="n">context</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludovic Delauné, Nicolas Saul, Pierre-Éric Pelloux-Prayer, Raphaël Delhome, Vincent Jaillot, Éric Lemoine
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

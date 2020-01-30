@@ -1,0 +1,9 @@
+py3dtiles.vectos package
+========================
+
+Module contents
+---------------
+
+.. automodule:: py3dtiles.vectos
+    :members:
+    :show-inheritance:

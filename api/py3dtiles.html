@@ -1,0 +1,655 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>py3dtiles package &mdash; py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="py3dtiles.points package" href="py3dtiles.points.html" />
+    <link rel="prev" title="py3dtiles" href="modules.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> py3dtiles
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                master
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">Command line usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">API doc</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">py3dtiles package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#subpackages">Subpackages</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.html">py3dtiles.points package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.b3dm">py3dtiles.b3dm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.batch_table">py3dtiles.batch_table module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.command_line">py3dtiles.command_line module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.convert">py3dtiles.convert module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.earcut">py3dtiles.earcut module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.export">py3dtiles.export module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.feature_table">py3dtiles.feature_table module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.gltf">py3dtiles.gltf module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.info">py3dtiles.info module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.merger">py3dtiles.merger module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.pnts">py3dtiles.pnts module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.tile">py3dtiles.tile module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.utils">py3dtiles.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles.wkb_utils">py3dtiles.wkb_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-py3dtiles">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../faq.html">FAQ and Troubleshooting</a></li>
+</ul>
+
+            
+          
+        </div>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <p class="caption"><span class="caption-text">Links:</span></p>
+          <ul>
+            <li class="toctree-l1">
+              <a class="reference" href="https://github.com/oslandia/py3dtiles">
+                <span class="fa fa-lg fa-github" />
+                Github Repository
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">py3dtiles</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">py3dtiles</a> &raquo;</li>
+        
+      <li>py3dtiles package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="../_sources/api/py3dtiles.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="py3dtiles-package">
+<h1>py3dtiles package<a class="headerlink" href="#py3dtiles-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="py3dtiles.points.html">py3dtiles.points package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py3dtiles.points.task.html">py3dtiles.points.task package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.task.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.task.html#module-py3dtiles.points.task.las_reader">py3dtiles.points.task.las_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.task.html#module-py3dtiles.points.task.node_process">py3dtiles.points.task.node_process module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.task.html#module-py3dtiles.points.task.pnts_writer">py3dtiles.points.task.pnts_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.task.html#module-py3dtiles.points.task.xyz_reader">py3dtiles.points.task.xyz_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="py3dtiles.points.task.html#module-py3dtiles.points.task">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.distance">py3dtiles.points.distance module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.node">py3dtiles.points.node module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.node_catalog">py3dtiles.points.node_catalog module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.points_grid">py3dtiles.points.points_grid module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.shared_node_store">py3dtiles.points.shared_node_store module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.transformations">py3dtiles.points.transformations module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="py3dtiles.points.html#requirements">Requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py3dtiles.points.html#notes">Notes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py3dtiles.points.html#references">References</a></li>
+<li class="toctree-l3"><a class="reference internal" href="py3dtiles.points.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points.utils">py3dtiles.points.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="py3dtiles.points.html#module-py3dtiles.points">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.b3dm">
+<span id="py3dtiles-b3dm-module"></span><h2>py3dtiles.b3dm module<a class="headerlink" href="#module-py3dtiles.b3dm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.b3dm.B3dm">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.b3dm.</code><code class="sig-name descname">B3dm</code><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.b3dm.B3dm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py3dtiles.tile.TileContent" title="py3dtiles.tile.TileContent"><code class="xref py py-class docutils literal notranslate"><span class="pre">py3dtiles.tile.TileContent</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.b3dm.B3dm.from_array">
+<em class="property">static </em><code class="sig-name descname">from_array</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dm.from_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.b3dm.B3dm.from_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>array : numpy.array</p>
+<p>t : TileContent</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.b3dm.B3dm.from_glTF">
+<em class="property">static </em><code class="sig-name descname">from_glTF</code><span class="sig-paren">(</span><em class="sig-param">gltf</em>, <em class="sig-param">bt=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dm.from_glTF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.b3dm.B3dm.from_glTF" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>gltf<span class="classifier">GlTF</span></dt><dd><p>glTF object representing a set of objects</p>
+</dd>
+<dt>bt<span class="classifier">Batch Table (optional)</span></dt><dd><p>BatchTable object containing per-feature metadata</p>
+</dd>
+</dl>
+<p>tile : TileContent</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.b3dm.B3dmHeader">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.b3dm.</code><code class="sig-name descname">B3dmHeader</code><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dmHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.b3dm.B3dmHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py3dtiles.tile.TileHeader" title="py3dtiles.tile.TileHeader"><code class="xref py py-class docutils literal notranslate"><span class="pre">py3dtiles.tile.TileHeader</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.b3dm.B3dmHeader.from_array">
+<em class="property">static </em><code class="sig-name descname">from_array</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dmHeader.from_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.b3dm.B3dmHeader.from_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>array : numpy.array</p>
+<p>h : TileHeader</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.b3dm.B3dmHeader.sync">
+<code class="sig-name descname">sync</code><span class="sig-paren">(</span><em class="sig-param">body</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dmHeader.sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.b3dm.B3dmHeader.sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow to synchronize headers with contents.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles.batch_table">
+<span id="py3dtiles-batch-table-module"></span><h2>py3dtiles.batch_table module<a class="headerlink" href="#module-py3dtiles.batch_table" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.batch_table.BatchTable">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.batch_table.</code><code class="sig-name descname">BatchTable</code><a class="reference internal" href="../_modules/py3dtiles/batch_table.html#BatchTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.batch_table.BatchTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Only the JSON header has been implemented for now. According to the batch
+table documentation, the binary body is useful for storing long arrays of
+data (better performances)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles.command_line">
+<span id="py3dtiles-command-line-module"></span><h2>py3dtiles.command_line module<a class="headerlink" href="#module-py3dtiles.command_line" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.convert">
+<span id="py3dtiles-convert-module"></span><h2>py3dtiles.convert module<a class="headerlink" href="#module-py3dtiles.convert" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.convert.NodeProcess">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.convert.</code><code class="sig-name descname">NodeProcess</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">active</em>, <em class="sig-param">inactive</em><span class="sig-paren">)</span><a class="headerlink" href="#py3dtiles.convert.NodeProcess" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.convert.NodeProcess.active">
+<em class="property">property </em><code class="sig-name descname">active</code><a class="headerlink" href="#py3dtiles.convert.NodeProcess.active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.convert.NodeProcess.inactive">
+<em class="property">property </em><code class="sig-name descname">inactive</code><a class="headerlink" href="#py3dtiles.convert.NodeProcess.inactive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.convert.NodeProcess.input">
+<em class="property">property </em><code class="sig-name descname">input</code><a class="headerlink" href="#py3dtiles.convert.NodeProcess.input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.convert.OctreeMetadata">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.convert.</code><code class="sig-name descname">OctreeMetadata</code><span class="sig-paren">(</span><em class="sig-param">aabb</em>, <em class="sig-param">spacing</em>, <em class="sig-param">scale</em><span class="sig-paren">)</span><a class="headerlink" href="#py3dtiles.convert.OctreeMetadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.convert.OctreeMetadata.aabb">
+<em class="property">property </em><code class="sig-name descname">aabb</code><a class="headerlink" href="#py3dtiles.convert.OctreeMetadata.aabb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.convert.OctreeMetadata.scale">
+<em class="property">property </em><code class="sig-name descname">scale</code><a class="headerlink" href="#py3dtiles.convert.OctreeMetadata.scale" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.convert.OctreeMetadata.spacing">
+<em class="property">property </em><code class="sig-name descname">spacing</code><a class="headerlink" href="#py3dtiles.convert.OctreeMetadata.spacing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.convert.Reader">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.convert.</code><code class="sig-name descname">Reader</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">active</em><span class="sig-paren">)</span><a class="headerlink" href="#py3dtiles.convert.Reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.convert.Reader.active">
+<em class="property">property </em><code class="sig-name descname">active</code><a class="headerlink" href="#py3dtiles.convert.Reader.active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.convert.Reader.input">
+<em class="property">property </em><code class="sig-name descname">input</code><a class="headerlink" href="#py3dtiles.convert.Reader.input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="exception">
+<dt id="py3dtiles.convert.SrsInMissingException">
+<em class="property">exception </em><code class="sig-prename descclassname">py3dtiles.convert.</code><code class="sig-name descname">SrsInMissingException</code><a class="reference internal" href="../_modules/py3dtiles/convert.html#SrsInMissingException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.convert.SrsInMissingException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/exceptions.html#Exception" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Exception</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.convert.ToPnts">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.convert.</code><code class="sig-name descname">ToPnts</code><span class="sig-paren">(</span><em class="sig-param">input</em>, <em class="sig-param">active</em><span class="sig-paren">)</span><a class="headerlink" href="#py3dtiles.convert.ToPnts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.convert.ToPnts.active">
+<em class="property">property </em><code class="sig-name descname">active</code><a class="headerlink" href="#py3dtiles.convert.ToPnts.active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.convert.ToPnts.input">
+<em class="property">property </em><code class="sig-name descname">input</code><a class="headerlink" href="#py3dtiles.convert.ToPnts.input" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="py3dtiles.convert.convert">
+<code class="sig-prename descclassname">py3dtiles.convert.</code><code class="sig-name descname">convert</code><span class="sig-paren">(</span><em class="sig-param">files</em>, <em class="sig-param">outfolder='./3dtiles'</em>, <em class="sig-param">overwrite=False</em>, <em class="sig-param">jobs=4</em>, <em class="sig-param">cache_size=1544</em>, <em class="sig-param">srs_out=None</em>, <em class="sig-param">srs_in=None</em>, <em class="sig-param">fraction=100</em>, <em class="sig-param">benchmark=None</em>, <em class="sig-param">rgb=True</em>, <em class="sig-param">graph=False</em>, <em class="sig-param">color_scale=None</em>, <em class="sig-param">verbose=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/convert.html#convert"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.convert.convert" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert pointclouds (xyz or las) to 3dtiles tileset containing pnts node</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>files</strong> (<em>list of str</em><em>, or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Filenames to process. The file must use the .las or .xyz format.</p></li>
+<li><p><strong>outfolder</strong> (<em>path-like object</em>) – The folder where the resulting tileset will be written.</p></li>
+<li><p><strong>overwrite</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Overwrite the ouput folder if it already exists.</p></li>
+<li><p><strong>jobs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – The number of parallel jobs to start. Default to the number of cpu.</p></li>
+<li><p><strong>cache_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Cache size in MB. Default to available memory / 10.</p></li>
+<li><p><strong>srs_out</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – SRS to convert the output with (numeric part of the EPSG code)</p></li>
+<li><p><strong>srs_in</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Override input SRS (numeric part of the EPSG code)</p></li>
+<li><p><strong>fraction</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.8)"><em>int</em></a>) – Percentage of the pointcloud to process, between 0 and 100.</p></li>
+<li><p><strong>benchmark</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.8)"><em>str</em></a>) – Print summary at the end of the process</p></li>
+<li><p><strong>rgb</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Export rgb attributes.</p></li>
+<li><p><strong>graph</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.8)"><em>bool</em></a>) – Produce debug graphes (requires pygal).</p></li>
+<li><p><strong>color_scale</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.8)"><em>float</em></a>) – Force color scale</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises</dt>
+<dd class="field-even"><p><a class="reference internal" href="#py3dtiles.convert.SrsInMissingException" title="py3dtiles.convert.SrsInMissingException"><strong>SrsInMissingException</strong></a> – if py3dtiles couldn’t find srs informations in input files and srs_in is not specified</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles.earcut">
+<span id="py3dtiles-earcut-module"></span><h2>py3dtiles.earcut module<a class="headerlink" href="#module-py3dtiles.earcut" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.export">
+<span id="py3dtiles-export-module"></span><h2>py3dtiles.export module<a class="headerlink" href="#module-py3dtiles.export" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.feature_table">
+<span id="py3dtiles-feature-table-module"></span><h2>py3dtiles.feature_table module<a class="headerlink" href="#module-py3dtiles.feature_table" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.feature_table.SemanticPoint">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.feature_table.</code><code class="sig-name descname">SemanticPoint</code><a class="reference internal" href="../_modules/py3dtiles/feature_table.html#SemanticPoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.feature_table.SemanticPoint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
+<p>An enumeration.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles.gltf">
+<span id="py3dtiles-gltf-module"></span><h2>py3dtiles.gltf module<a class="headerlink" href="#module-py3dtiles.gltf" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.info">
+<span id="py3dtiles-info-module"></span><h2>py3dtiles.info module<a class="headerlink" href="#module-py3dtiles.info" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.merger">
+<span id="py3dtiles-merger-module"></span><h2>py3dtiles.merger module<a class="headerlink" href="#module-py3dtiles.merger" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.pnts">
+<span id="py3dtiles-pnts-module"></span><h2>py3dtiles.pnts module<a class="headerlink" href="#module-py3dtiles.pnts" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.pnts.Pnts">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.pnts.</code><code class="sig-name descname">Pnts</code><a class="reference internal" href="../_modules/py3dtiles/pnts.html#Pnts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.pnts.Pnts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py3dtiles.tile.TileContent" title="py3dtiles.tile.TileContent"><code class="xref py py-class docutils literal notranslate"><span class="pre">py3dtiles.tile.TileContent</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.pnts.Pnts.from_array">
+<em class="property">static </em><code class="sig-name descname">from_array</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/pnts.html#Pnts.from_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.pnts.Pnts.from_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>array : numpy.array</p>
+<p>t : TileContent</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.pnts.Pnts.from_features">
+<em class="property">static </em><code class="sig-name descname">from_features</code><span class="sig-paren">(</span><em class="sig-param">pdtype</em>, <em class="sig-param">cdtype</em>, <em class="sig-param">features</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/pnts.html#Pnts.from_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.pnts.Pnts.from_features" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>dtype<span class="classifier">numpy.dtype</span></dt><dd><p>Numpy description of a single feature</p>
+</dd>
+</dl>
+<p>features : Feature[]</p>
+<p>tile : TileContent</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.pnts.PntsHeader">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.pnts.</code><code class="sig-name descname">PntsHeader</code><a class="reference internal" href="../_modules/py3dtiles/pnts.html#PntsHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.pnts.PntsHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py3dtiles.tile.TileHeader" title="py3dtiles.tile.TileHeader"><code class="xref py py-class docutils literal notranslate"><span class="pre">py3dtiles.tile.TileHeader</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.pnts.PntsHeader.from_array">
+<em class="property">static </em><code class="sig-name descname">from_array</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/pnts.html#PntsHeader.from_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.pnts.PntsHeader.from_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>array : numpy.array</p>
+<p>h : TileHeader</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.pnts.PntsHeader.sync">
+<code class="sig-name descname">sync</code><span class="sig-paren">(</span><em class="sig-param">body</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/pnts.html#PntsHeader.sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.pnts.PntsHeader.sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow to synchronize headers with contents.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles.tile">
+<span id="py3dtiles-tile-module"></span><h2>py3dtiles.tile module<a class="headerlink" href="#module-py3dtiles.tile" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.tile.TileContent">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.tile.</code><code class="sig-name descname">TileContent</code><a class="reference internal" href="../_modules/py3dtiles/tile.html#TileContent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.tile.TileContent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.tile.TileContent.sync">
+<code class="sig-name descname">sync</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/tile.html#TileContent.sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.tile.TileContent.sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow to synchronize headers with contents.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.tile.TileHeader">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.tile.</code><code class="sig-name descname">TileHeader</code><a class="reference internal" href="../_modules/py3dtiles/tile.html#TileHeader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.tile.TileHeader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.tile.TileType">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.tile.</code><code class="sig-name descname">TileType</code><a class="reference internal" href="../_modules/py3dtiles/tile.html#TileType"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.tile.TileType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/enum.html#enum.Enum" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">enum.Enum</span></code></a></p>
+<p>An enumeration.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles.utils">
+<span id="py3dtiles-utils-module"></span><h2>py3dtiles.utils module<a class="headerlink" href="#module-py3dtiles.utils" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-py3dtiles.wkb_utils">
+<span id="py3dtiles-wkb-utils-module"></span><h2>py3dtiles.wkb_utils module<a class="headerlink" href="#module-py3dtiles.wkb_utils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="py3dtiles.wkb_utils.triangulate">
+<code class="sig-prename descclassname">py3dtiles.wkb_utils.</code><code class="sig-name descname">triangulate</code><span class="sig-paren">(</span><em class="sig-param">polygon</em>, <em class="sig-param">additionalPolygons=[]</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/wkb_utils.html#triangulate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.wkb_utils.triangulate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Triangulates 3D polygons</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-py3dtiles">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-py3dtiles" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="py3dtiles.TileContent">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.</code><code class="sig-name descname">TileContent</code><a class="reference internal" href="../_modules/py3dtiles/tile.html#TileContent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.TileContent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/abc.html#abc.ABC" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">abc.ABC</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.TileContent.sync">
+<code class="sig-name descname">sync</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/tile.html#TileContent.sync"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.TileContent.sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allow to synchronize headers with contents.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.Pnts">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.</code><code class="sig-name descname">Pnts</code><a class="reference internal" href="../_modules/py3dtiles/pnts.html#Pnts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.Pnts" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py3dtiles.tile.TileContent" title="py3dtiles.tile.TileContent"><code class="xref py py-class docutils literal notranslate"><span class="pre">py3dtiles.tile.TileContent</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.Pnts.from_array">
+<em class="property">static </em><code class="sig-name descname">from_array</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/pnts.html#Pnts.from_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.Pnts.from_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>array : numpy.array</p>
+<p>t : TileContent</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.Pnts.from_features">
+<em class="property">static </em><code class="sig-name descname">from_features</code><span class="sig-paren">(</span><em class="sig-param">pdtype</em>, <em class="sig-param">cdtype</em>, <em class="sig-param">features</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/pnts.html#Pnts.from_features"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.Pnts.from_features" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>dtype<span class="classifier">numpy.dtype</span></dt><dd><p>Numpy description of a single feature</p>
+</dd>
+</dl>
+<p>features : Feature[]</p>
+<p>tile : TileContent</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.B3dm">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.</code><code class="sig-name descname">B3dm</code><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.B3dm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#py3dtiles.tile.TileContent" title="py3dtiles.tile.TileContent"><code class="xref py py-class docutils literal notranslate"><span class="pre">py3dtiles.tile.TileContent</span></code></a></p>
+<dl class="method">
+<dt id="py3dtiles.B3dm.from_array">
+<em class="property">static </em><code class="sig-name descname">from_array</code><span class="sig-paren">(</span><em class="sig-param">array</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dm.from_array"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.B3dm.from_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>array : numpy.array</p>
+<p>t : TileContent</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="py3dtiles.B3dm.from_glTF">
+<em class="property">static </em><code class="sig-name descname">from_glTF</code><span class="sig-paren">(</span><em class="sig-param">gltf</em>, <em class="sig-param">bt=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/py3dtiles/b3dm.html#B3dm.from_glTF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.B3dm.from_glTF" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>gltf<span class="classifier">GlTF</span></dt><dd><p>glTF object representing a set of objects</p>
+</dd>
+<dt>bt<span class="classifier">Batch Table (optional)</span></dt><dd><p>BatchTable object containing per-feature metadata</p>
+</dd>
+</dl>
+<p>tile : TileContent</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="py3dtiles.BatchTable">
+<em class="property">class </em><code class="sig-prename descclassname">py3dtiles.</code><code class="sig-name descname">BatchTable</code><a class="reference internal" href="../_modules/py3dtiles/batch_table.html#BatchTable"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#py3dtiles.BatchTable" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.8)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Only the JSON header has been implemented for now. According to the batch
+table documentation, the binary body is useful for storing long arrays of
+data (better performances)</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="py3dtiles.points.html" class="btn btn-neutral float-right" title="py3dtiles.points package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="modules.html" class="btn btn-neutral float-left" title="py3dtiles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludovic Delauné, Nicolas Saul, Pierre-Éric Pelloux-Prayer, Raphaël Delhome, Vincent Jaillot, Éric Lemoine
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

@@ -1,0 +1,448 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>py3dtiles.wkb_utils &mdash; py3dtiles 1.0.2, 1.0.1, 0.0.9 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script type="text/javascript" src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> py3dtiles
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                master
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../cli.html">Command line usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/modules.html">API doc</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../faq.html">FAQ and Troubleshooting</a></li>
+</ul>
+
+            
+          
+        </div>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          <p class="caption"><span class="caption-text">Links:</span></p>
+          <ul>
+            <li class="toctree-l1">
+              <a class="reference" href="https://github.com/oslandia/py3dtiles">
+                <span class="fa fa-lg fa-github" />
+                Github Repository
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">py3dtiles</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>py3dtiles.wkb_utils</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for py3dtiles.wkb_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">struct</span>
+<span class="kn">from</span> <span class="nn">.earcut</span> <span class="kn">import</span> <span class="n">earcut</span>
+
+
+<span class="k">class</span> <span class="nc">TriangleSoup</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">from_wkb_multipolygon</span><span class="p">(</span><span class="n">wkb</span><span class="p">,</span> <span class="n">associatedData</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        wkb : string</span>
+<span class="sd">            Well-Known Binary binary string describing a multipolygon</span>
+
+<span class="sd">        associatedData : array</span>
+<span class="sd">            array of multipolygons containing data attached to the wkb</span>
+<span class="sd">            parameter multipolygon. Must be the same size as wkb.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ts : TriangleSoup</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">multipolygons</span> <span class="o">=</span> <span class="p">[</span><span class="n">parse</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">wkb</span><span class="p">))]</span>
+
+        <span class="k">for</span> <span class="n">additionalWkb</span> <span class="ow">in</span> <span class="n">associatedData</span><span class="p">:</span>
+            <span class="n">multipolygons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">parse</span><span class="p">(</span><span class="nb">bytes</span><span class="p">(</span><span class="n">additionalWkb</span><span class="p">)))</span>
+
+        <span class="n">trianglesArray</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">multipolygons</span><span class="p">))]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">multipolygons</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="n">polygon</span> <span class="o">=</span> <span class="n">multipolygons</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">additionalPolygons</span> <span class="o">=</span> <span class="p">[</span><span class="n">mp</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">mp</span> <span class="ow">in</span> <span class="n">multipolygons</span><span class="p">[</span><span class="mi">1</span><span class="p">:]]</span>
+            <span class="n">triangles</span> <span class="o">=</span> <span class="n">triangulate</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">additionalPolygons</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">array</span><span class="p">,</span> <span class="n">tri</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">trianglesArray</span><span class="p">,</span> <span class="n">triangles</span><span class="p">):</span>
+                <span class="n">array</span> <span class="o">+=</span> <span class="n">tri</span>
+            <span class="sd">&quot;&quot;&quot;if(len(polygon) != 1):</span>
+<span class="sd">                print(&quot;No support for inner polygon rings&quot;)</span>
+<span class="sd">            else:</span>
+<span class="sd">                if(len(polygon[0]) &gt; 3):</span>
+<span class="sd">                    triangles = triangulate(polygon[0],</span>
+<span class="sd">                                            [p[0] for p in additionalPolygons])</span>
+<span class="sd">                    for array, tri in zip(trianglesArray, triangles):</span>
+<span class="sd">                        array += tri</span>
+<span class="sd">                else:</span>
+<span class="sd">                    for array, tri in zip(trianglesArray,</span>
+<span class="sd">                                          [polygon] + additionalPolygons):</span>
+<span class="sd">                        array += tri&quot;&quot;&quot;</span>
+
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">TriangleSoup</span><span class="p">()</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">triangles</span> <span class="o">=</span> <span class="n">trianglesArray</span>
+
+        <span class="k">return</span> <span class="n">ts</span>
+
+    <span class="k">def</span> <span class="nf">getPositionArray</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Binary array of vertice positions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">verticeTriangles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">verticeArray</span> <span class="o">=</span> <span class="n">vertexAttributeToArray</span><span class="p">(</span><span class="n">verticeTriangles</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">verticeArray</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">getDataArray</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index: int</span>
+<span class="sd">            The index of the associated data</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Binary array of vertice data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">verticeTriangles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">index</span><span class="p">]</span>
+        <span class="n">verticeArray</span> <span class="o">=</span> <span class="n">vertexAttributeToArray</span><span class="p">(</span><span class="n">verticeTriangles</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">verticeArray</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">getNormalArray</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Binary array of vertice normals</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">normals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="n">U</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">V</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">N</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">U</span><span class="p">,</span> <span class="n">V</span><span class="p">)</span>
+            <span class="n">norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">normals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">normals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">N</span> <span class="o">/</span> <span class="n">norm</span><span class="p">)</span>
+
+        <span class="n">verticeArray</span> <span class="o">=</span> <span class="n">faceAttributeToArray</span><span class="p">(</span><span class="n">normals</span><span class="p">)</span>
+        <span class="k">return</span> <span class="sa">b</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">verticeArray</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">getBbox</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Array [[minX, minY, minZ],[maxX, maxY, maxZ]]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">mins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="n">maxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">triangles</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">mins</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">maxs</span><span class="p">,</span> <span class="mi">0</span><span class="p">)]</span>
+
+
+<span class="k">def</span> <span class="nf">faceAttributeToArray</span><span class="p">(</span><span class="n">triangles</span><span class="p">):</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">triangles</span><span class="p">:</span>
+        <span class="n">array</span> <span class="o">+=</span> <span class="p">[</span><span class="n">face</span><span class="p">,</span> <span class="n">face</span><span class="p">,</span> <span class="n">face</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">array</span>
+
+
+<span class="k">def</span> <span class="nf">vertexAttributeToArray</span><span class="p">(</span><span class="n">triangles</span><span class="p">):</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">face</span> <span class="ow">in</span> <span class="n">triangles</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">vertex</span> <span class="ow">in</span> <span class="n">face</span><span class="p">:</span>
+            <span class="n">array</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">vertex</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">array</span>
+
+
+<span class="k">def</span> <span class="nf">parse</span><span class="p">(</span><span class="n">wkb</span><span class="p">):</span>
+    <span class="n">multipolygon</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># length = len(wkb)</span>
+    <span class="c1"># print(length)</span>
+    <span class="n">byteorder</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="n">wkb</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">bo</span> <span class="o">=</span> <span class="s1">&#39;&lt;&#39;</span> <span class="k">if</span> <span class="n">byteorder</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">else</span> <span class="s1">&#39;&gt;&#39;</span>
+    <span class="n">geomtype</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">bo</span> <span class="o">+</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">wkb</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">5</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">hasZ</span> <span class="o">=</span> <span class="p">(</span><span class="n">geomtype</span> <span class="o">==</span> <span class="mi">1006</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">geomtype</span> <span class="o">==</span> <span class="mi">1015</span><span class="p">)</span>
+    <span class="c1"># MultipolygonZ or polyhedralSurface</span>
+    <span class="n">pntOffset</span> <span class="o">=</span> <span class="mi">24</span> <span class="k">if</span> <span class="n">hasZ</span> <span class="k">else</span> <span class="mi">16</span>
+    <span class="n">pntUnpack</span> <span class="o">=</span> <span class="s1">&#39;ddd&#39;</span> <span class="k">if</span> <span class="n">hasZ</span> <span class="k">else</span> <span class="s1">&#39;dd&#39;</span>
+    <span class="n">geomNb</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">bo</span> <span class="o">+</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">wkb</span><span class="p">[</span><span class="mi">5</span><span class="p">:</span><span class="mi">9</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># print(struct.unpack(&#39;b&#39;, wkb[9:10])[0])</span>
+    <span class="c1"># print(struct.unpack(&#39;I&#39;, wkb[10:14])[0])   # 1003 (Polygon)</span>
+    <span class="c1"># print(struct.unpack(&#39;I&#39;, wkb[14:18])[0])   # num lines</span>
+    <span class="c1"># print(struct.unpack(&#39;I&#39;, wkb[18:22])[0])   # num points</span>
+    <span class="n">offset</span> <span class="o">=</span> <span class="mi">9</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">geomNb</span><span class="p">):</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">5</span>  <span class="c1"># struct.unpack(&#39;bI&#39;, wkb[offset:offset + 5])[0]</span>
+        <span class="c1"># 1 (byteorder), 1003 (Polygon)</span>
+        <span class="n">lineNb</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">bo</span> <span class="o">+</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">wkb</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span> <span class="o">+</span> <span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">offset</span> <span class="o">+=</span> <span class="mi">4</span>
+        <span class="n">polygon</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">lineNb</span><span class="p">):</span>
+            <span class="n">pointNb</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">bo</span> <span class="o">+</span> <span class="s1">&#39;I&#39;</span><span class="p">,</span> <span class="n">wkb</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span> <span class="o">+</span> <span class="mi">4</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="mi">4</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pointNb</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">pt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="n">bo</span> <span class="o">+</span> <span class="n">pntUnpack</span><span class="p">,</span> <span class="n">wkb</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span>
+                              <span class="o">+</span> <span class="n">pntOffset</span><span class="p">]),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+                <span class="n">offset</span> <span class="o">+=</span> <span class="n">pntOffset</span>
+                <span class="n">line</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pt</span><span class="p">)</span>
+            <span class="n">offset</span> <span class="o">+=</span> <span class="n">pntOffset</span>   <span class="c1"># skip redundant point</span>
+            <span class="n">polygon</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+        <span class="n">multipolygon</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">polygon</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">multipolygon</span>
+
+
+<div class="viewcode-block" id="triangulate"><a class="viewcode-back" href="../../api/py3dtiles.html#py3dtiles.wkb_utils.triangulate">[docs]</a><span class="k">def</span> <span class="nf">triangulate</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">additionalPolygons</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Triangulates 3D polygons</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vect1</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">vect2</span> <span class="o">=</span> <span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">polygon</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">vectProd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">vect1</span><span class="p">,</span> <span class="n">vect2</span><span class="p">)</span>
+    <span class="n">polygon2D</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">holes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">polygon</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="n">holes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delta</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">))</span>
+        <span class="n">delta</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+    <span class="c1"># triangulation of the polygon projected on planes (xy) (zx) or (yz)</span>
+    <span class="k">if</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">vectProd</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">vectProd</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+       <span class="ow">and</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">vectProd</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">vectProd</span><span class="p">[</span><span class="mi">2</span><span class="p">])):</span>
+        <span class="c1"># (yz) projection</span>
+        <span class="k">for</span> <span class="n">linestring</span> <span class="ow">in</span> <span class="n">polygon</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">linestring</span><span class="p">:</span>
+                <span class="n">polygon2D</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+    <span class="k">elif</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">vectProd</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">vectProd</span><span class="p">[</span><span class="mi">2</span><span class="p">])):</span>
+        <span class="c1"># (zx) projection</span>
+        <span class="k">for</span> <span class="n">linestring</span> <span class="ow">in</span> <span class="n">polygon</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">linestring</span><span class="p">:</span>
+                <span class="n">polygon2D</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># (xy) projextion</span>
+        <span class="k">for</span> <span class="n">linestring</span> <span class="ow">in</span> <span class="n">polygon</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">linestring</span><span class="p">:</span>
+                <span class="n">polygon2D</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+
+    <span class="n">trianglesIdx</span> <span class="o">=</span> <span class="n">earcut</span><span class="p">(</span><span class="n">polygon2D</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">arrays</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">additionalPolygons</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">trianglesIdx</span><span class="p">),</span> <span class="mi">3</span><span class="p">):</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">trianglesIdx</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="n">p0</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">p1</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">p2</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">polygon</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="c1"># triangulation may break triangle orientation, test it before</span>
+        <span class="c1"># adding triangles</span>
+        <span class="n">crossProduct</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">p1</span> <span class="o">-</span> <span class="n">p0</span><span class="p">,</span> <span class="n">p2</span> <span class="o">-</span> <span class="n">p0</span><span class="p">)</span>
+        <span class="n">invert</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vectProd</span><span class="p">,</span> <span class="n">crossProduct</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">invert</span><span class="p">:</span>
+            <span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">p1</span><span class="p">,</span> <span class="n">p0</span><span class="p">,</span> <span class="n">p2</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">arrays</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">array</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">arrays</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">additionalPolygons</span><span class="p">):</span>
+            <span class="n">pp0</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">pp1</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">pp2</span> <span class="o">=</span> <span class="n">unflatten</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">holes</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">invert</span><span class="p">:</span>
+                <span class="n">array</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">pp1</span><span class="p">,</span> <span class="n">pp0</span><span class="p">,</span> <span class="n">pp2</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">array</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">pp0</span><span class="p">,</span> <span class="n">pp1</span><span class="p">,</span> <span class="n">pp2</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">arrays</span></div>
+
+
+<span class="k">def</span> <span class="nf">unflatten</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">lengths</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">lengths</span><span class="p">))):</span>
+        <span class="n">lgth</span> <span class="o">=</span> <span class="n">lengths</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="n">lgth</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">array</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">][</span><span class="n">index</span> <span class="o">-</span> <span class="n">lgth</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">array</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2019, Augustin Trancart, Paul Blottière, Jérémy Gaillard, Ludovic Delauné, Nicolas Saul, Pierre-Éric Pelloux-Prayer, Raphaël Delhome, Vincent Jaillot, Éric Lemoine
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
