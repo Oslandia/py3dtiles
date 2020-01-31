@@ -76,4 +76,4 @@ that contains the object's ID and the host and port. Usage example:
 
 .. code-block:: shell
 
-    $ export_tileset -D database -t my_city -c geom -i id -u oslandia -H localhost -P 5432
+    $ py3dtiles export -t table -D database -c geometry_column -i id -u oslandia -H localhost -P 5432
