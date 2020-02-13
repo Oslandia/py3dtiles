@@ -260,7 +260,7 @@ def init_parser(subparser, str2bool):
         default='./3dtiles')
     parser.add_argument(
         '--overwrite',
-        help='Overwrite the ouput folder if it already exists.',
+        help='Delete and recreate the ouput folder if it already exists. WARNING: be careful, there will be no confirmation!',
         default=False,
         type=str2bool)
     parser.add_argument(
@@ -442,7 +442,7 @@ def convert(files,
     # create folder
     if os.path.isdir(outfolder):
         if overwrite:
-            shutil.rmtree(outfolder)
+            shutil.rmtree(outfolder, ignore_errors=True)
         else:
             print('Error, folder \'{}\' already exists'.format(outfolder))
             sys.exit(1)
