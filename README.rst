@@ -1,3 +1,5 @@
+:warning: Project migrated to : https://gitlab.com/py3dtiles/py3dtiles :warning:
+
 .. image:: https://travis-ci.org/Oslandia/py3dtiles.svg?branch=master
     :target: https://travis-ci.org/Oslandia/py3dtiles
 
